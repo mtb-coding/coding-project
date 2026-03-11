@@ -34,6 +34,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/mode/shell/shell.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/mode/rust/rust.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/mode/go/go.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/mode/stex/stex.min.js"></script>
 
     <!-- CodeMirror Addons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/addon/dialog/dialog.min.css">
@@ -83,6 +84,8 @@
     <script src="https://unpkg.com/prettier@2.8.1/parser-postcss.js"></script>
     <script src="https://unpkg.com/prettier@2.8.1/parser-markdown.js"></script>
     <script src="https://unpkg.com/prettier@2.8.1/parser-yaml.js"></script>
+    <script src="https://unpkg.com/prettier@2.8.1/parser-typescript.js"></script>
+    <script src="https://unpkg.com/prettier@2.8.1/parser-graphql.js"></script>
 
     <!-- Custom CSS -->
     <link rel="stylesheet" href="css/styles.css">
@@ -130,10 +133,20 @@
                 <button onclick="toggleSidebar()" title="Toggle Sidebar">≡</button>
                 <button onclick="newTab()" title="New Untitled File (Ctrl+N)">New Tab</button>
                 <button onclick="saveCurrentFile()" title="Save Current File (Ctrl+S)">Save</button>
-                <button onclick="downloadCurrentFile()" title="Download Current File">Download</button>
-                <button onclick="formatCode()" title="Format Code (Ctrl+Shift+F)">Format</button>
                 <button onclick="openLocalSearch()" title="Find/Replace in File (Ctrl+F)">Find/Replace</button>
-                <button onclick="openGoToLine()" title="Go to Line/Column (Ctrl+G)">Go to…</button>
+                <div class="toolbar-overflow-wrap">
+                    <button class="toolbar-overflow-btn" onclick="toggleToolbarMenu(event)" title="More actions">···</button>
+                    <div class="toolbar-overflow-menu" id="toolbarOverflowMenu">
+                        <div onclick="downloadCurrentFile(); closeToolbarMenu()">Download File</div>
+                        <div onclick="formatCode(); closeToolbarMenu()">Format Code <span class="toolbar-menu-shortcut">Ctrl+Shift+F</span></div>
+                        <div onclick="openGoToLine(); closeToolbarMenu()">Go to Line… <span class="toolbar-menu-shortcut">Ctrl+G</span></div>
+                        <div onclick="copyEditorContent(); closeToolbarMenu()">Copy Contents</div>
+                        <div class="context-menu-sep"></div>
+                        <div onclick="saveAllFiles(); closeToolbarMenu()">Save All <span class="toolbar-menu-shortcut">Ctrl+Shift+S</span></div>
+                        <div onclick="downloadProject(); closeToolbarMenu()">Download Project (ZIP)</div>
+                        <div onclick="closeAllTabs(); closeToolbarMenu()">Close All Tabs</div>
+                    </div>
+                </div>
             </div>
             
             <div class="search-container">
@@ -260,6 +273,7 @@
     <script src="js/fileTree.js"></script>
     <script src="js/tabs.js"></script>
     <script src="js/fileOps.js"></script>
+    <script src="js/formatLatex.js"></script>
     <script src="js/editor.js"></script>
     <script src="js/session.js"></script>
     <script src="js/main.js"></script>
