@@ -66,5 +66,9 @@ Because CodeEdit persists your work in your browser's database, you may want to 
 | **Toggle Comment** | `Ctrl + /` |
 | **Global Search Focus** | `Ctrl + Shift + G` |
 
+## ⚠️ Known Limitations
+1. No console/compiler yet
+2. Cannot handle binaries/videos or some other unsupported files.
+
 ---
 *Pro-Tip: CodeEdit is persistent. If you close your browser tab and come back later, your files, folders, open tabs, and recent file history will be exactly where you left them. (Assuming nothing else broke)*
