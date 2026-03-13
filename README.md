@@ -7,8 +7,8 @@ CodeEdit is a fully open-source, portable, persistent, and lightweight code edit
 *   **Open Directory**: Use the **Open Directory** button to load an entire folder structure into the editor. Your browser will keep these files in its local storage database.
 *   **File Explorer**: The collapsible **File Explorer** panel on the left lets you navigate your project.
     *   **Right-click** any file or folder to access context menus for Renaming, Deleting, Creating new sub-items, Copying the path, and downloading a folder as a ZIP.
-    *   **Root**: Right-click the `root` folder to rename the project.
-    *   **Drag and Drop**: You can drag files or folders directly into the Sidebar to import them into your workspace.
+    *   **Root**: Right-click the `root` folder to rename the project, collapse/expand all folders, or sort files by extension.
+    *   **Drag and Drop**: You can drag files or folders directly into the Sidebar to import them into your workspace. You can also drag items within the explorer to move them about (this also changes their paths), useful for organization.
 *   **Recent Files**: A collapsible **Recent Files** panel above the File Explorer tracks the last 20 files you opened. Click any entry to reopen it; click `×` to remove it from the list. Recent files are persisted across sessions.
 *   **Downloading**: Click **Download Project** to zip your current workspace and save it to your computer. Right-click any folder in the tree and choose **Download Folder** to zip just that subtree. (Be careful since Windows' aggressive protection might block the unzip — right-click the zip, click Properties, then click 'Unblock'.)
 
