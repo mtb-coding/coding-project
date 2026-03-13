@@ -1,245 +1,163 @@
-// js/minimap.js — Lightweight editor minimap rendered to a <canvas>
-// The canvas represents the entire document at LINE_H px/line.
-// The #minimapWrap clips it; on scroll we shift the canvas position inside
-// the wrap so the viewport band is always visible — exactly like VS Code.
+// js/minimap.js — Canvas minimap for CodeMirror 5
 
 (function () {
-    const CHAR_W  = 1.5;   // px per character column
-    const LINE_H  = 2;     // px per line  (full-document scale, no capping)
-    const MAX_W   = 80;    // canvas/wrap width in px
-    const PADDING = 4;     // horizontal padding inside canvas
+    const LINE_H = 2;      // canvas px per doc line
+    const CHAR_W = 1.4;    // canvas px per character
+    const WIDTH  = 82;     // must match .minimap-wrap width in CSS
+    const PAD    = 3;
 
-    let canvas, ctx, wrap;
-    let renderTimeout = null;
-    let isDragging = false;
-
-    // Colour palette (monokai-ish dark theme)
-    const COLOURS = {
-        bg:             '#1e1e1e',
-        text:           '#555e6e',
-        keyword:        '#e06c75',
-        string:         '#98c379',
-        comment:        '#4b5263',
-        number:         '#d19a66',
-        viewport:       'rgba(180,180,255,0.10)',
-        viewportBorder: 'rgba(180,180,255,0.25)',
+    const C = {
+        bg:      '#1e1e1e',
+        text:    '#4e5a65',
+        band:    'rgba(160,160,255,0.25)',
+        border:  'rgba(160,160,255,0.60)',
+        keyword: '#f92672', string:  '#a6e22e', comment: '#75715e',
+        number:  '#ae81ff', def:     '#66d9ef', variable:'#fd971f',
+        atom:    '#ae81ff', operator:'#f92672', tag:     '#f92672',
+        attribute:'#a6e22e', builtin:'#66d9ef',
     };
 
-    const TOKEN_MAP = [
-        ['comment',   COLOURS.comment],
-        ['string',    COLOURS.string],
-        ['number',    COLOURS.number],
-        ['keyword',   COLOURS.keyword],
-        ['def',       '#61afef'],
-        ['variable',  '#e5c07b'],
-        ['atom',      '#d19a66'],
-        ['operator',  '#abb2bf'],
-        ['tag',       '#e06c75'],
-        ['attribute', '#d19a66'],
-    ];
-
-    function tokenColour(tokenType) {
-        if (!tokenType) return COLOURS.text;
-        for (const [k, c] of TOKEN_MAP) {
-            if (tokenType.includes(k)) return c;
-        }
-        return COLOURS.text;
+    function tokCol(type) {
+        if (!type) return C.text;
+        for (const k of type.split(' ')) if (C[k]) return C[k];
+        return C.text;
     }
 
-    // ── canvas offset within wrap so the viewport band stays visible ──────
-    function syncCanvasOffset() {
-        if (!codeEditor || !canvas || !wrap) return;
-        const scrollInfo  = codeEditor.getScrollInfo();
-        const docH        = scrollInfo.height;
-        if (docH <= 0) return;
+    let wrap = null, canvas = null, ctx = null;
+    let scheduled = false;
 
-        const wrapH       = wrap.offsetHeight;
-        const canvasH     = canvas.height;
+    // ── draw ─────────────────────────────────────────────────────────────
 
-        // Where is the viewport band on the canvas?
-        const bandTop     = (scrollInfo.top / docH) * canvasH;
-        const bandH       = Math.max((scrollInfo.clientHeight / docH) * canvasH, 8);
-
-        // Ideal canvas translateY: centre the band in the wrap, clamped so
-        // the canvas never scrolls past its own edges.
-        const idealOffset = bandTop + bandH / 2 - wrapH / 2;
-        const maxOffset   = Math.max(0, canvasH - wrapH);
-        const offset      = Math.max(0, Math.min(idealOffset, maxOffset));
-
-        canvas.style.transform = `translateY(${-offset}px)`;
-    }
-
-    function render() {
+    function draw() {
+        scheduled = false;
         if (!codeEditor || !canvas || !ctx) return;
 
         const totalLines = codeEditor.lineCount();
-        const canvasH    = Math.max(totalLines * LINE_H, 1);
-        const maxChars   = Math.floor((MAX_W - PADDING * 2) / CHAR_W);
+        const canH = Math.max(totalLines * LINE_H, 1);
 
-        // Resize only when needed
-        if (canvas.width !== MAX_W || canvas.height !== canvasH) {
-            canvas.width  = MAX_W;
-            canvas.height = canvasH;
+        if (canvas.width !== WIDTH || canvas.height !== canH) {
+            canvas.width  = WIDTH;
+            canvas.height = canH;
         }
 
-        ctx.fillStyle = COLOURS.bg;
-        ctx.fillRect(0, 0, MAX_W, canvasH);
+        // Background
+        ctx.fillStyle = C.bg;
+        ctx.fillRect(0, 0, WIDTH, canH);
 
-        for (let i = 0; i < totalLines; i++) {
-            const y = i * LINE_H;
-            let x = PADDING, charIdx = 0;
+        // Lines
+        for (let ln = 0; ln < totalLines; ln++) {
+            const y = ln * LINE_H;
+            let x = PAD;
             try {
-                codeEditor.getLineTokens(i).forEach(tok => {
-                    const colour = tokenColour(tok.type);
-                    ctx.fillStyle = colour;
-                    const text = tok.string.slice(0, maxChars - charIdx);
-                    if (!text) return;
-                    const w = Math.min(text.length * CHAR_W, MAX_W - x - PADDING);
-                    if (w > 0) ctx.fillRect(x, y, w, Math.max(LINE_H - 0.5, 1));
-                    x += text.length * CHAR_W;
-                    charIdx += text.length;
-                });
+                // true = precise mode: tokenize even lines outside viewport
+                const tokens = codeEditor.getLineTokens(ln, true);
+                for (const tok of tokens) {
+                    if (x >= WIDTH || !tok.string) continue;
+                    const w = Math.min(tok.string.length * CHAR_W, WIDTH - x);
+                    if (w > 0) {
+                        ctx.fillStyle = tokCol(tok.type);
+                        ctx.fillRect(x, y, w, LINE_H - 0.5);
+                    }
+                    x += tok.string.length * CHAR_W;
+                }
             } catch (_) {
-                const line = codeEditor.getLine(i) || '';
-                const w = Math.min(line.length * CHAR_W, MAX_W - PADDING * 2);
-                ctx.fillStyle = COLOURS.text;
-                if (w > 0) ctx.fillRect(PADDING, y, w, Math.max(LINE_H - 0.5, 1));
+                const line = codeEditor.getLine(ln) || '';
+                const w = Math.min(line.length * CHAR_W, WIDTH - PAD);
+                ctx.fillStyle = C.text;
+                if (w > 0) ctx.fillRect(PAD, y, w, LINE_H - 0.5);
             }
         }
 
-        // Draw viewport band
-        const scrollInfo = codeEditor.getScrollInfo();
-        const docH = scrollInfo.height;
-        if (docH > 0) {
-            const vTop    = (scrollInfo.top            / docH) * canvasH;
-            const vHeight = Math.max((scrollInfo.clientHeight / docH) * canvasH, 8);
-            ctx.fillStyle = COLOURS.viewport;
-            ctx.fillRect(0, vTop, MAX_W, vHeight);
-            ctx.strokeStyle = COLOURS.viewportBorder;
-            ctx.lineWidth = 1;
-            ctx.strokeRect(0.5, vTop + 0.5, MAX_W - 1, Math.max(vHeight - 1, 1));
-        }
+        // Viewport band
+        const si = codeEditor.getScrollInfo();
+        // si.height = total scrollable height (px), si.clientHeight = visible height (px)
+        // si.top    = current scroll offset (px)
+        const scrollRange = si.height - si.clientHeight;  // max scrollable px
+        const scrollFrac  = scrollRange > 0 ? si.top / scrollRange : 0;
+        const visibleFrac = si.clientHeight / si.height;
 
-        syncCanvasOffset();
-    }
+        const bandH   = Math.max(visibleFrac * canH, 8);
+        const bandTop = scrollFrac * (canH - bandH);
 
-    // Fast path: on scroll just redraw the viewport band + shift canvas offset
-    // without re-tokenising every line (full render is scheduled separately).
-    function onScroll() {
-        if (!codeEditor || !canvas || !ctx) return;
-        const scrollInfo = codeEditor.getScrollInfo();
-        const docH       = scrollInfo.height;
-        const canvasH    = canvas.height;
-        if (docH <= 0) return;
-
-        // Clear only the area that could contain an old band.
-        // Re-draw the background strip for the full canvas height then repaint
-        // the band — cheaper than a full render on every scroll tick.
-        ctx.fillStyle = COLOURS.bg;
-        ctx.fillRect(0, 0, MAX_W, canvasH);
-
-        // Re-draw all lines (tokenised data is already cached by CM internals so this is fast)
-        const maxChars = Math.floor((MAX_W - PADDING * 2) / CHAR_W);
-        const totalLines = codeEditor.lineCount();
-        for (let i = 0; i < totalLines; i++) {
-            const y = i * LINE_H;
-            let x = PADDING, charIdx = 0;
-            try {
-                codeEditor.getLineTokens(i).forEach(tok => {
-                    ctx.fillStyle = tokenColour(tok.type);
-                    const text = tok.string.slice(0, maxChars - charIdx);
-                    if (!text) return;
-                    const w = Math.min(text.length * CHAR_W, MAX_W - x - PADDING);
-                    if (w > 0) ctx.fillRect(x, y, w, Math.max(LINE_H - 0.5, 1));
-                    x += text.length * CHAR_W;
-                    charIdx += text.length;
-                });
-            } catch (_) {}
-        }
-
-        const vTop    = (scrollInfo.top            / docH) * canvasH;
-        const vHeight = Math.max((scrollInfo.clientHeight / docH) * canvasH, 8);
-        ctx.fillStyle = COLOURS.viewport;
-        ctx.fillRect(0, vTop, MAX_W, vHeight);
-        ctx.strokeStyle = COLOURS.viewportBorder;
+        ctx.fillStyle = C.band;
+        ctx.fillRect(0, bandTop, WIDTH, bandH);
+        ctx.strokeStyle = C.border;
         ctx.lineWidth = 1;
-        ctx.strokeRect(0.5, vTop + 0.5, MAX_W - 1, Math.max(vHeight - 1, 1));
+        ctx.strokeRect(0.5, bandTop + 0.5, WIDTH - 1, bandH - 1);
 
-        syncCanvasOffset();
+        // Slide canvas so band stays in view
+        const wrapH = wrap.clientHeight;
+        if (canH > wrapH) {
+            let offset = bandTop + bandH / 2 - wrapH / 2;
+            offset = Math.max(0, Math.min(offset, canH - wrapH));
+            canvas.style.transform = `translateY(${-offset}px)`;
+        } else {
+            canvas.style.transform = 'translateY(0)';
+        }
     }
 
-    function scheduleRender() {
-        if (renderTimeout) return;
-        renderTimeout = setTimeout(() => { renderTimeout = null; render(); }, 80);
+    function schedule() {
+        if (scheduled) return;
+        scheduled = true;
+        requestAnimationFrame(draw);
     }
 
-    // ── pointer interaction ──────────────────────────────────────────────
-    function scrollEditorToCanvasY(clientY) {
+    // ── click / drag ─────────────────────────────────────────────────────
+
+    function jumpTo(clientY) {
         if (!codeEditor || !canvas || !wrap) return;
-        // clientY relative to the wrap top gives position within the visible window.
-        // Add the canvas's current translateY offset to get the true canvas-coordinate Y.
-        const wrapRect  = wrap.getBoundingClientRect();
-        const relY      = clientY - wrapRect.top;
-        const translateY = getCurrentTranslateY();
-        const canvasY   = relY + translateY;
-        const fraction  = Math.max(0, Math.min(1, canvasY / canvas.height));
-        const scrollInfo = codeEditor.getScrollInfo();
-        codeEditor.scrollTo(null, fraction * scrollInfo.height);
+        const wrapRect = wrap.getBoundingClientRect();
+
+        // Current slide offset (positive number of px the canvas is shifted up)
+        const m = canvas.style.transform.match(/translateY\(\s*(-?[\d.]+)px\)/);
+        const slideOffset = m ? -parseFloat(m[1]) : 0;
+
+        // Position on canvas = position within wrap + how far canvas is slid up
+        const canvasY  = (clientY - wrapRect.top) + slideOffset;
+        const fraction = Math.max(0, Math.min(1, canvasY / canvas.height));
+
+        const si = codeEditor.getScrollInfo();
+        codeEditor.scrollTo(null, fraction * si.height);
     }
 
-    // Extract the current translateY value set on the canvas element
-    function getCurrentTranslateY() {
-        if (!canvas) return 0;
-        const t = canvas.style.transform;
-        if (!t) return 0;
-        const m = t.match(/translateY\(\s*(-?[\d.]+)px\s*\)/);
-        return m ? -parseFloat(m[1]) : 0;  // stored as negative, we want positive offset
-    }
+    // ── init ─────────────────────────────────────────────────────────────
 
-    function ensureCanvas() {
-        if (canvas) return;
+    window.initMinimap = function () {
         wrap = document.getElementById('minimapWrap');
-        if (!wrap) { console.warn('[Minimap] #minimapWrap not found'); return; }
+        if (!wrap) { console.error('[Minimap] #minimapWrap missing'); return; }
+        if (!codeEditor) { console.error('[Minimap] codeEditor not ready'); return; }
 
         canvas = document.createElement('canvas');
         canvas.id = 'minimapCanvas';
-        // position:absolute so translateY() moves it within the overflow:hidden wrap
-        canvas.style.cssText = `display:block;width:${MAX_W}px;position:absolute;top:0;left:0;cursor:pointer;will-change:transform;`;
+        canvas.style.cssText = `position:absolute;top:0;left:0;width:${WIDTH}px;cursor:pointer;will-change:transform;`;
         wrap.appendChild(canvas);
         ctx = canvas.getContext('2d');
 
-        canvas.addEventListener('mousedown', (e) => {
-            e.preventDefault();
-            isDragging = true;
-            scrollEditorToCanvasY(e.clientY);
-        });
-        canvas.addEventListener('mousemove', (e) => {
-            if (isDragging) scrollEditorToCanvasY(e.clientY);
-        });
-        document.addEventListener('mouseup', () => { isDragging = false; });
-    }
+        // Pointer events
+        let dragging = false;
+        canvas.addEventListener('mousedown', e => { e.preventDefault(); dragging = true; jumpTo(e.clientY); });
+        window.addEventListener('mousemove', e => { if (dragging) jumpTo(e.clientY); });
+        window.addEventListener('mouseup',   () => { dragging = false; });
 
-    // ── public API ───────────────────────────────────────────────────────
-    window.initMinimap = function () {
-        ensureCanvas();
-        if (!codeEditor) { console.warn('[Minimap] codeEditor not available'); return; }
-        codeEditor.on('change',         scheduleRender);
-        codeEditor.on('scroll',         onScroll);
-        codeEditor.on('viewportChange', scheduleRender);
-        codeEditor.on('swapDoc',        scheduleRender);
-        render();
-        console.log('[Minimap] Initialised');
+        // Editor events
+        codeEditor.on('change',         schedule);
+        codeEditor.on('scroll',         schedule);
+        codeEditor.on('viewportChange', schedule);
+        codeEditor.on('swapDoc',        schedule);
+
+        draw();
+        console.log('[Minimap] ready —', codeEditor.lineCount(), 'lines');
     };
 
-    window.refreshMinimap = function () { scheduleRender(); };
+    window.refreshMinimap  = function () { schedule(); };
 
-    window.destroyMinimap = function () {
-        if (!codeEditor) return;
-        codeEditor.off('change',         scheduleRender);
-        codeEditor.off('scroll',         onScroll);
-        codeEditor.off('viewportChange', scheduleRender);
-        codeEditor.off('swapDoc',        scheduleRender);
+    window.destroyMinimap  = function () {
+        if (codeEditor) {
+            codeEditor.off('change',         schedule);
+            codeEditor.off('scroll',         schedule);
+            codeEditor.off('viewportChange', schedule);
+            codeEditor.off('swapDoc',        schedule);
+        }
         if (canvas) { canvas.remove(); canvas = null; ctx = null; }
-        console.log('[Minimap] Destroyed');
     };
 })();
