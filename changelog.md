@@ -3,13 +3,20 @@
 # Changes in v0.3.2
 
 ## Bugfixes
-- Fixed a bug that made bracket colorization not work.
+- Fixed bracket colorization not working — rewrote to use `codeEditor.getLine()` + character-by-character scanning and `markText()` instead of token matching and `elementFromPoint`, which were both unreliable
+- Fixed bracket colorization CSS leaking outside the editor and colouring unrelated elements (e.g. status bar text)
+- Fixed command palette items doing nothing when clicked — hover was rebuilding the list and destroying the element before the click could fire
+- Fixed CSS linter incorrectly flagging every CSS custom property (`--*`) as an error
 
 ## Improvements
-- Implemented pinned tabs logic.
+- Implemented pinned tabs — protected from Close Others, Close All, `×`, and `Ctrl+W`; sort to the left of the tab strip; toggled via the tab right-click context menu
+- Unmatched brackets are now coloured red; matched brackets use depth colours as before
+- Pressing Delete after clicking a file or folder in the tree within a customizable time window now triggers deletion (with confirmation)
+- Command palette enlarged and redesigned
+- TypeScript, JSX, and TSX now show correctly in the status bar mode indicator
 
 ## Additions
-- soon
+- `treeDeleteWindowMs` setting — configures how long after a tree click the Delete key is intercepted (default 1500ms, range 200–5000ms); exposed in Settings
 
 ---
 
