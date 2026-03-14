@@ -1,4 +1,4 @@
-# Changes in v0.3.1
+# Changes in v0.3.2
 
 ## Bugfixes
 - soon
