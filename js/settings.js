@@ -63,6 +63,7 @@ function applySettings() {
     if (autoSaveIntervalMsEl)  autoSaveIntervalMsEl.value  = String((settings.autoSaveIntervalMs || 30000) / 1000);
     if (autoSaveIntervalMsRow) autoSaveIntervalMsRow.style.display = settings.autoSaveInterval ? 'flex' : 'none';
 
+    if (_el('treeDeleteWindowMs')) _el('treeDeleteWindowMs').value = String(settings.treeDeleteWindowMs ?? 1500);
     if (_el('sidebar'))     _el('sidebar').style.width         = settings.sidebarWidth;
     if (_el('editorPane'))  _el('editorPane').style.flexBasis  = settings.editorPaneFlexBasis;
     if (_el('previewPane')) _el('previewPane').style.flexBasis = settings.previewPaneFlexBasis;
@@ -352,6 +353,13 @@ function applyBracketColorizationToEditor() {
 
 document.addEventListener('DOMContentLoaded', () => {
     _el('autoCloseTags').addEventListener('change', (e) => updateAndSaveSetting('autoCloseTags', e.target.checked));
+    if (_el('treeDeleteWindowMs')) {
+        _el('treeDeleteWindowMs').addEventListener('change', (e) => {
+            const ms = Math.max(200, Math.min(5000, parseInt(e.target.value, 10) || 1500));
+            e.target.value = ms;
+            updateAndSaveSetting('treeDeleteWindowMs', ms);
+        });
+    }
     _el('matchBrackets').addEventListener('change', (e) => updateAndSaveSetting('matchBrackets', e.target.checked));
     _el('autoCloseBrackets').addEventListener('change', (e) => updateAndSaveSetting('autoCloseBrackets', e.target.checked));
     _el('themeSelect').addEventListener('change', (e) => updateAndSaveSetting('theme', e.target.value));

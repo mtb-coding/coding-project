@@ -33,7 +33,14 @@ document.addEventListener('DOMContentLoaded', async () => {
             "Ctrl-Shift-F": formatCode, "Cmd-Shift-F": formatCode, 
             "Ctrl-/": "toggleComment", "Cmd-/": "toggleComment",
             "Ctrl-Tab": () => cycleTab(1),
-            "Ctrl-Shift-Tab": () => cycleTab(-1)
+            "Ctrl-Shift-Tab": () => cycleTab(-1),
+            "Delete": (cm) => {
+                if (lastClickedTreePath && lastClickedTreePath !== 'root' && (Date.now() - lastClickedTreeTime) < (settings.treeDeleteWindowMs ?? 1500)) {
+                    deleteEntry(lastClickedTreePath);
+                } else {
+                    return CodeMirror.Pass; // let CM handle normal deletion
+                }
+            }
         },
         hintOptions: { completeSingle: false }, indentUnit: settings.tabWidth, indentWithTabs: false, smartIndent: true
     });
@@ -87,6 +94,15 @@ document.addEventListener('DOMContentLoaded', async () => {
         if ((e.ctrlKey || e.metaKey) && !e.shiftKey && !e.altKey && e.key.toLowerCase() === 'w') {
             e.preventDefault();
         }
+        // Intercept Delete before CodeMirror when a tree node was the last thing clicked
+        if (e.key === 'Delete' && !e.ctrlKey && !e.metaKey && !e.altKey) {
+            const tag = document.activeElement?.tagName;
+            if (tag !== 'INPUT' && tag !== 'TEXTAREA' && lastClickedTreePath && lastClickedTreePath !== 'root' && (Date.now() - lastClickedTreeTime) < (settings.treeDeleteWindowMs ?? 1500)) {
+                e.preventDefault();
+                e.stopPropagation();
+                deleteEntry(lastClickedTreePath);
+            }
+        }
     }, true);
 
     document.addEventListener('keydown', async (e) => {
@@ -128,6 +144,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 if (openTabs.size === 0) { codeEditor.setValue(''); codeEditor.clearHistory(); updateStatusBar(); }
             }
         }
+
     });
 
     const searchInput = document.getElementById('searchInput');
