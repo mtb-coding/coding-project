@@ -7,6 +7,7 @@
 - Fixed bracket colorization CSS leaking outside the editor and colouring unrelated elements (e.g. status bar text)
 - Fixed command palette items doing nothing when clicked — hover was rebuilding the list and destroying the element before the click could fire
 - Fixed CSS linter incorrectly flagging every CSS custom property (`--*`) as an error
+- Fixed diff view rendering as a blank screen
 
 ## Improvements
 - Implemented pinned tabs — protected from Close Others, Close All, `×`, and `Ctrl+W`; sort to the left of the tab strip; toggled via the tab right-click context menu
@@ -17,6 +18,7 @@
 
 ## Additions
 - `treeDeleteWindowMs` setting — configures how long after a tree click the Delete key is intercepted (default 1500ms, range 200–5000ms); exposed in Settings
+- `+` button at the right end of the tab strip opens a new untitled tab
 
 ---
 
