@@ -42,7 +42,7 @@ CodeEdit is a fully open-source, portable, persistent, and lightweight code edit
 *   **Bracket Colorization**: Matching bracket pairs are coloured by nesting depth (three cycling colours). Can be toggled in Settings.
 *   **Font**: The editor uses Fira Code with fallbacks to Consolas and Monaco for ligature and monospace rendering.
 
-## 🚀 Command Palette
+## ⚙️ Command Palette
 Can't remember a shortcut?
 *   **Open**: Press `Ctrl+Shift+P` (or `Cmd+Shift+P` on Mac).
 *   **Usage**: Type to filter through available commands (e.g., "save," "new," "format," "goto"). Use arrow keys to navigate and `Enter` to execute. Press `Esc` to close.
