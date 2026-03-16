@@ -179,6 +179,7 @@ body { background: var(--bg-color); color: var(--text-color); display: flex; hei
 /* CodeMirror Highlight Overlays */
 .cm-searching { background-color: rgba(255, 255, 0, 0.4); }
 .cm-searching-current { background-color: rgba(255, 165, 0, 0.8); color: black; font-weight: bold; }
+.CodeMirror-activeline-background { background: var(--active-line-bg) !important; }
 
 /* Search match scrollbar annotations (minimap ticks) */
 .cm-search-match-annotation .CodeMirror-scrollbar-filler { background: transparent; }
