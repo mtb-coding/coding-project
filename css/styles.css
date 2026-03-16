@@ -1,3 +1,4 @@
+
 :root {
     /* ── Semantic UI colours (overridden per-theme by applyThemeChrome()) ── */
     --bg-color:         #272822;
@@ -118,13 +119,18 @@ body { background: var(--bg-color); color: var(--text-color); display: flex; hei
 .context-menu-sep { height: 1px; background: var(--chrome-sep); margin: 4px 0; padding: 0 !important; cursor: default; }
 .context-menu-sep:hover { background: var(--chrome-sep) !important; }
 .editor-container { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+
+/* Tabs container with the "New Tab" button structure */
 .tabs-wrap { display: flex; align-items: stretch; background: var(--chrome-bar); border-bottom: 1px solid var(--chrome-border); flex-shrink: 0; }
 .tabs { background: transparent; border-bottom: none; display: flex; overflow-x: auto; flex: 1; min-width: 0; max-width: calc(100% - 44px); }
 .new-tab-btn { flex-shrink: 0; background: transparent; border: none; border-left: 1px solid var(--chrome-border); color: var(--text-color); opacity: 0.5; font-size: 20px; line-height: 1; padding: 0 12px; cursor: pointer; transition: opacity 0.15s, background 0.15s; }
 .new-tab-btn:hover { opacity: 1; background: var(--chrome-hover); }
+
+/* Custom Tab Scrollbar overrides */
 .tabs::-webkit-scrollbar { height: 8px; }
 .tabs::-webkit-scrollbar-track { background: transparent; }
-.tabs::-webkit-scrollbar-thumb { background: var(--chrome-scrollthumb); border-top: 5px solid transparent; background-clip: content-box; }
+.tabs::-webkit-scrollbar-thumb { background: var(--chrome-scrollthumb); border-top: 5px solid transparent; background-clip: content-box; border-left: none; border-right: none; border-bottom: none; border-radius: 0; }
+
 .tab { padding: 8px 15px; background: var(--chrome-tab); color: var(--text-color); border-right: 1px solid var(--chrome-border); cursor: pointer; position: relative; min-width: 150px; text-align: left; font-size: 14px; transition: background 0.2s; white-space: nowrap; display: flex; align-items: center; justify-content: space-between; }
 .tab .tab-text { overflow: hidden; text-overflow: ellipsis; margin-right: 10px; display: flex; align-items: center; }
 .tab .unsaved-indicator { color: #e5c07b; font-weight: bold; margin-left: 4px; display: inline-block; }
@@ -144,13 +150,17 @@ body { background: var(--bg-color); color: var(--text-color); display: flex; hei
 .editor-header button:first-child { margin-left: 0; }
 .editor-header button:hover { background: var(--button-hover); }
 .editor-header button.active { background: var(--button-hover); box-shadow: inset 0 0 0 2px rgba(255,255,255,0.25); }
+
+/* --- Restored Editor Layout (No Flexbox) --- */
 .editor-split { display: flex; flex: 1; overflow: hidden; }
-.editor-pane { flex: 1 1 50%; min-width: 0; overflow: hidden; position: relative; display: flex; flex-direction: column; }
-#codeEditor { flex: 1; min-height: 0; }
+.editor-pane { flex: 1 1 50%; min-width: 0; overflow: hidden; position: relative; }
+#codeEditor { height: 100%; }
 .preview-pane { flex: 1 1 50%; min-width: 0; overflow: auto; border-left: 1px solid var(--chrome-border); display: none; }
+.CodeMirror { height: 100%; font-family: 'Fira Code', 'Consolas', 'Monaco', monospace; font-size: 13px; }
+
 .resize-handle-vertical { width: 5px; height: 100%; background-color: var(--chrome-border); cursor: col-resize; flex-shrink: 0; z-index: 5; display: none; }
 .resize-handle-vertical:hover { background-color: var(--accent-color); }
-.CodeMirror { height: 100%; font-family: 'Fira Code', 'Consolas', 'Monaco', monospace; font-size: 13px; }
+
 .CodeMirror-lint-marker-error, .CodeMirror-lint-marker-warning { background-position: center center; background-repeat: no-repeat; background-size: 14px 14px; cursor: help; margin-left: 2px; vertical-align: middle; }
 .CodeMirror-lint-marker-error { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='%23dc3545' viewBox='0 0 16 16'%3E%3Cpath d='M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0zM5.354 4.646a.5.5 0 1 0-.708.708L7.293 8l-2.647 2.646a.5.5 0 0 0 .708.708L8 8.707l2.646 2.647a.5.5 0 0 0 .708-.708L8.707 8l2.647-2.646a.5.5 0 0 0-.708-.708L8 7.293 5.354 4.646z'/%3E%3C/svg%3E"); }
 .CodeMirror-lint-marker-warning { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='%23ffc107' viewBox='0 0 16 16'%3E%3Cpath d='M8.982 1.566a1.13 1.13 0 0 0-1.96 0L.165 13.233c-.457.778.091 1.767.98 1.767h13.713c.889 0 1.438-.99.98-1.767L8.982 1.566zM8 5c.535 0 .954.462.9.995l-.35 3.507a.552.552 0 0 1-1.1 0L7.1 5.995A.905.905 0 0 1 8 5zm.002 6a1 1 0 1 1 0 2 1 1 0 0 1 0-2z'/%3E%3C/svg%3E"); }
@@ -288,7 +298,7 @@ body { background: var(--bg-color); color: var(--text-color); display: flex; hei
 }
 #paletteList::-webkit-scrollbar { width: 6px; }
 #paletteList::-webkit-scrollbar-track { background: transparent; }
-#paletteList::-webkit-scrollbar-thumb { background: var(--chrome-scrollthumb); border-radius: 3px; }
+#paletteList::-webkit-scrollbar-thumb { background: var(--chrome-scrollthumb); border-radius: 3px; border: none; }
 
 /* Custom Modal Styles */
 .modal-overlay {
@@ -478,7 +488,7 @@ body { background: var(--bg-color); color: var(--text-color); display: flex; hei
 }
 
 /* ============================================================
-   Themed scrollbars — editor, sidebar, preview
+   Restored Working Scrollbar Styles
    ============================================================ */
 
 /* CodeMirror editor scroll area */
