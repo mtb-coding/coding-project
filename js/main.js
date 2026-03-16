@@ -20,7 +20,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         lineNumbers: true, tabSize: settings.tabWidth, mode: 'text/plain', theme: settings.theme,
         foldGutter: settings.foldGutter, gutters: ["CodeMirror-linenumbers", "CodeMirror-foldgutter", "CodeMirror-lint-markers"],
         matchBrackets: settings.matchBrackets, autoCloseBrackets: settings.autoCloseBrackets, autoCloseTags: settings.autoCloseTags,
-        lineWrapping: settings.wordWrap, lint: true, styleActiveLine: settings.activeLineHighlight ?? true,
+        lineWrapping: settings.wordWrap, lint: true,
         extraKeys: { 
             "Ctrl-Q": cm => cm.foldCode(cm.getCursor()), 
             "Ctrl-F": () => openLocalSearch(false), 
@@ -110,10 +110,12 @@ document.addEventListener('DOMContentLoaded', async () => {
             closeContextMenu();
             closeToolbarMenu();
             const paletteVisible = document.getElementById('commandPalette').style.display !== 'none';
+            const filePaletteVisible = document.getElementById('filePalette').style.display !== 'none';
             const settingsVisible = document.getElementById('settingsOverlay').style.display !== 'none';
             hideCommandPalette();
+            hideFilePalette();
             if (settingsVisible) toggleSettings();
-            if (paletteVisible || settingsVisible) {
+            if (paletteVisible || filePaletteVisible || settingsVisible) {
                 setTimeout(() => codeEditor && codeEditor.focus(), 0);
             }
         }
@@ -126,6 +128,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             openLocalSearch(false); 
         }
         else if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key.toLowerCase() === 'p') { e.preventDefault(); showCommandPalette(); }
+        else if ((e.ctrlKey || e.metaKey) && !e.shiftKey && e.key.toLowerCase() === 'p') { e.preventDefault(); showFilePalette(); }
         else if ((e.ctrlKey || e.metaKey) && e.key === 'n') { e.preventDefault(); newTab(); }
         else if ((e.ctrlKey || e.metaKey) && e.key === 's') { e.preventDefault(); saveCurrentFile(); }
         else if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key.toLowerCase() === 's') { e.preventDefault(); saveAllFiles(); }
@@ -216,11 +219,158 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
     
     initCommandPalette();
+    initFilePalette();
 
     document.addEventListener('click', (e) => {
         if (!e.target.closest('.toolbar-overflow-wrap')) closeToolbarMenu();
     });
 });
+
+// ==========================================
+// --- File Search Palette               ---
+// ==========================================
+
+let filePaletteSelectedIndex = 0;
+let filePaletteResults = [];
+
+function getAllFiles() {
+    const files = [];
+    function traverse(path) {
+        const entry = fileStructure[path];
+        if (!entry) return;
+        if (entry.type === 'file' && !entry.isUntitled) {
+            const name = path.split('/').pop();
+            const displayPath = path.replace(/^root\//, '');
+            files.push({ path, name, displayPath });
+        } else if (entry.type === 'folder') {
+            (entry.children || []).forEach(child => traverse(path + '/' + child));
+        }
+    }
+    traverse('root');
+    return files;
+}
+
+function scoreFileMatch(file, query) {
+    const q = query.toLowerCase();
+    const name = file.name.toLowerCase();
+    const displayPath = file.displayPath.toLowerCase();
+    if (name === q) return 100;
+    if (name.startsWith(q)) return 80;
+    if (name.includes(q)) return 60;
+    if (displayPath.includes(q)) return 40;
+    return 0;
+}
+
+function highlightMatch(text, query) {
+    if (!query) return escapeHtml(text);
+    const idx = text.toLowerCase().indexOf(query.toLowerCase());
+    if (idx === -1) return escapeHtml(text);
+    return escapeHtml(text.slice(0, idx))
+        + '<span class="file-palette-match">' + escapeHtml(text.slice(idx, idx + query.length)) + '</span>'
+        + escapeHtml(text.slice(idx + query.length));
+}
+
+function renderFilePalette(query) {
+    const ul = document.getElementById('fileList');
+    const allFiles = getAllFiles();
+    const q = query.trim();
+
+    if (!q) {
+        // Show all files when empty, sorted by recent
+        filePaletteResults = allFiles.sort((a, b) => {
+            const aRecent = recentFiles.findIndex(r => r.path === a.path);
+            const bRecent = recentFiles.findIndex(r => r.path === b.path);
+            if (aRecent !== -1 && bRecent !== -1) return aRecent - bRecent;
+            if (aRecent !== -1) return -1;
+            if (bRecent !== -1) return 1;
+            return a.name.localeCompare(b.name);
+        });
+    } else {
+        filePaletteResults = allFiles
+            .map(f => ({ ...f, score: scoreFileMatch(f, q) }))
+            .filter(f => f.score > 0)
+            .sort((a, b) => b.score - a.score);
+    }
+
+    filePaletteSelectedIndex = 0;
+    ul.innerHTML = '';
+
+    if (filePaletteResults.length === 0) {
+        const li = document.createElement('li');
+        li.className = 'file-palette-empty';
+        li.textContent = 'No files found.';
+        ul.appendChild(li);
+        return;
+    }
+
+    filePaletteResults.forEach((file, idx) => {
+        const li = document.createElement('li');
+        li.className = 'file-palette-item' + (idx === 0 ? ' selected' : '');
+        li.style.animationDelay = `${Math.min(idx * 18, 120)}ms`;
+        li.innerHTML = `
+            <span class="file-palette-name">${highlightMatch(file.name, q)}</span>
+            <span class="file-palette-path">${escapeHtml(file.displayPath)}</span>
+        `;
+        li.addEventListener('click', () => openFilePaletteResult(file.path));
+        ul.appendChild(li);
+    });
+}
+
+function updateFilePaletteSelection() {
+    const items = document.querySelectorAll('#fileList .file-palette-item');
+    items.forEach((li, i) => {
+        li.classList.toggle('selected', i === filePaletteSelectedIndex);
+    });
+    const selected = items[filePaletteSelectedIndex];
+    if (selected) selected.scrollIntoView({ block: 'nearest' });
+}
+
+function openFilePaletteResult(path) {
+    hideFilePalette();
+    openFile(path);
+}
+
+function showFilePalette() {
+    const palette = document.getElementById('filePalette');
+    palette.style.display = 'flex';
+    const input = document.getElementById('filePaletteInput');
+    input.value = '';
+    renderFilePalette('');
+    setTimeout(() => input.focus(), 10);
+}
+
+function hideFilePalette() {
+    const palette = document.getElementById('filePalette');
+    if (palette.style.display === 'none') return;
+    palette.style.display = 'none';
+    if (codeEditor) setTimeout(() => codeEditor.focus(), 0);
+}
+
+function handleFilePaletteOverlayClick(e) {
+    if (e.target === document.getElementById('filePalette')) hideFilePalette();
+}
+
+function initFilePalette() {
+    const input = document.getElementById('filePaletteInput');
+    const debouncedRender = debounce((val) => renderFilePalette(val), 80);
+    input.addEventListener('input', () => debouncedRender(input.value));
+    input.addEventListener('keydown', (e) => {
+        if (e.key === 'ArrowDown') {
+            e.preventDefault();
+            filePaletteSelectedIndex = Math.min(filePaletteSelectedIndex + 1, filePaletteResults.length - 1);
+            updateFilePaletteSelection();
+        } else if (e.key === 'ArrowUp') {
+            e.preventDefault();
+            filePaletteSelectedIndex = Math.max(filePaletteSelectedIndex - 1, 0);
+            updateFilePaletteSelection();
+        } else if (e.key === 'Enter') {
+            e.preventDefault();
+            if (filePaletteResults[filePaletteSelectedIndex]) {
+                openFilePaletteResult(filePaletteResults[filePaletteSelectedIndex].path);
+            }
+        }
+    });
+}
 
 const commands = [
     { id: 'new-file', label: 'New File', action: () => createNewFile(currentWorkingDirectory || 'root'), shortcut: 'Ctrl+Shift+N' },
@@ -242,6 +392,7 @@ const commands = [
     { id: 'global-search', label: 'Focus Global Search', action: () => { document.getElementById('searchInput').focus(); document.getElementById('searchInput').select(); }, shortcut: 'Ctrl+Shift+G' },
     { id: 'find-replace', label: 'Find/Replace in File', action: () => openLocalSearch(true), shortcut: 'Ctrl+H' },
     { id: 'toggle-recent', label: 'Toggle Recent Files Panel', action: toggleRecentFiles },
+    { id: 'file-search', label: 'Search Files', action: showFilePalette, shortcut: 'Ctrl+P' },
     { id: 'settings', label: 'Open Settings', action: toggleSettings }
 ];
 
