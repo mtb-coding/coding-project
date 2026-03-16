@@ -122,7 +122,9 @@ body { background: var(--bg-color); color: var(--text-color); display: flex; hei
 .tabs { background: transparent; border-bottom: none; display: flex; overflow-x: auto; flex: 1; min-width: 0; max-width: calc(100% - 44px); }
 .new-tab-btn { flex-shrink: 0; background: transparent; border: none; border-left: 1px solid var(--chrome-border); color: var(--text-color); opacity: 0.5; font-size: 20px; line-height: 1; padding: 0 12px; cursor: pointer; transition: opacity 0.15s, background 0.15s; }
 .new-tab-btn:hover { opacity: 1; background: var(--chrome-hover); }
-.tabs::-webkit-scrollbar { height: 3px; } .tabs::-webkit-scrollbar-thumb { background: var(--chrome-scrollthumb); }
+.tabs::-webkit-scrollbar { height: 8px; }
+.tabs::-webkit-scrollbar-track { background: transparent; }
+.tabs::-webkit-scrollbar-thumb { background: var(--chrome-scrollthumb); border-top: 5px solid transparent; background-clip: content-box; }
 .tab { padding: 8px 15px; background: var(--chrome-tab); color: var(--text-color); border-right: 1px solid var(--chrome-border); cursor: pointer; position: relative; min-width: 150px; text-align: left; font-size: 14px; transition: background 0.2s; white-space: nowrap; display: flex; align-items: center; justify-content: space-between; }
 .tab .tab-text { overflow: hidden; text-overflow: ellipsis; margin-right: 10px; display: flex; align-items: center; }
 .tab .unsaved-indicator { color: #e5c07b; font-weight: bold; margin-left: 4px; display: inline-block; }
