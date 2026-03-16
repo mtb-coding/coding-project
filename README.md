@@ -56,7 +56,7 @@ Click the **Preview** button to enable the split-pane preview.
 ## 🛠️ Workspace Isolation
 Because CodeEdit persists your work in your browser's database, you may want to separate different projects. To do this:
 1.  Open `js/globals.js`.
-2.  Update the `VERSION` constant (e.g. `"0.2.3"` or any other string). The page title will reflect this version.
+2.  Update the `VERSION` constant (e.g. `"0.2.3"` or any other string). Note, the page title by default appends `v[VERSION]` to the end. To change this behavior, you can edit line 17 of `main.js`.
 3.  The editor will treat this as a completely separate workspace, isolating files, tabs, and session state from any other version.
 
 ## ⌨️ Keyboard Shortcuts Reference
