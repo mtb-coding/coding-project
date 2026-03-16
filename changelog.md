@@ -15,11 +15,14 @@
 - Pressing Delete after clicking a file or folder in the tree within a customizable time window now triggers deletion (with confirmation)
 - Command palette enlarged and redesigned
 - TypeScript, JSX, and TSX now show correctly in the status bar mode indicator
-- Fixed tab scroll hitbox being too small
+- Tab scroll hitbox enlarged — visible scrollbar remains 3px but the interactive hit area is now 8px, making it much easier to grab
+- Preview pane now scroll-syncs with the editor — scrolling the editor proportionally scrolls the preview for Markdown, HTML, and LaTeX files
+- Active line highlight — the current cursor line is subtly highlighted in the editor; togglable via Settings → Editor; colour is theme-aware across all built-in themes
 
 ## Additions
 - `treeDeleteWindowMs` setting — configures how long after a tree click the Delete key is intercepted (default 1500ms, range 200–5000ms); exposed in Settings
 - `+` button at the right end of the tab strip opens a new untitled tab
+- `activeLineHighlight` setting — toggles active line highlighting; default on; exposed in Settings → Editor
 
 ---
 
@@ -101,5 +104,3 @@
 * **LaTeX (`.tex`) support** — syntax highlighting via CodeMirror's `stex` mode; live preview rendered in the preview pane using KaTeX (loaded on demand inside the iframe's `srcdoc`) with support for math environments (`equation`, `align`, `gather`), sectioning commands, inline formatting, `itemize`/`enumerate`/`description` lists, `tabular`, `verbatim`, `\footnote`, `\href`, and title/author/date metadata; native formatter in `js/formatLatex.js` normalises blank lines and indents `\begin{}`/`\end{}` blocks; `.tex` and `.bib` added to the icon map (📐 and 📚), mode map, file templates, and drag-and-drop text allowlist
 * **Copy Contents button** — toolbar `···` menu includes **Copy Contents**, which copies the full editor text to the clipboard as plain text via the Clipboard API
 * **Rename Root** -- Root folder (after which the zip is named) is now renamable. Internally paths are still treated as root/ despite rename.
-
-
