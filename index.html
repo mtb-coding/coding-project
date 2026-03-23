@@ -180,7 +180,7 @@
 
             <div class="right-buttons">
                 <button id="diffBtn" onclick="toggleDiff()" title="View Unsaved Changes vs Last Save">Diff</button>
-                <button id="previewBtn" onclick="togglePreview()" title="Toggle Preview for HTML/Markdown">Preview</button>
+                <button id="previewBtn" onclick="togglePreview()" title="Toggle Preview for HTML, Markdown, LaTeX, CSV, and XLSX files">Preview</button>
                 <button onclick="toggleSettings()" title="Editor Settings">Settings</button>
             </div>
         </div>
@@ -194,6 +194,7 @@
                         <input type="text" id="localSearchInput" placeholder="Find in file...">
                         <span id="localSearchCount">0/0</span>
                         <button id="localSearchCaseBtn" onclick="toggleLocalSearchCase()" title="Match Case (Alt+C)" class="search-toggle-btn">Aa</button>
+                        <button id="localSearchRegexBtn" onclick="toggleLocalSearchRegex()" title="Use Regular Expression (Alt+R)" class="search-toggle-btn">.*</button>
                         <button onclick="findNextLocal()" title="Next (Enter)">↓</button>
                         <button onclick="findPrevLocal()" title="Previous (Shift+Enter)">↑</button>
                         <button onclick="toggleLocalReplace()" title="Toggle Replace (Ctrl+H)">🔁</button>
@@ -239,6 +240,7 @@
                         <label class="settings-label"><input type="checkbox" id="autoCloseBrackets" checked> Auto-Close Brackets</label>
                         <label class="settings-label"><input type="checkbox" id="bracketColorization" checked> Bracket Pair Colorization</label>
                         <label class="settings-label"><input type="checkbox" id="activeLineHighlight" checked> Active Line Highlight</label>
+                        <label class="settings-label"><input type="checkbox" id="foldGutter" checked> Code Folding</label>
                         <label class="settings-label"><input type="checkbox" id="wordWrap"> Word Wrap</label>
                         <label class="settings-label"><input type="checkbox" id="fileTemplates" checked> File Templates on New File</label>
                         <label class="settings-label settings-label-row">
@@ -302,6 +304,14 @@
         </div>
     </div>
 
+    <!-- Symbol Outline Palette -->
+    <div id="symbolPalette" class="modal-overlay" style="display: none;" onclick="handleSymbolPaletteOverlayClick(event)">
+        <div class="palette-box">
+            <input type="text" id="symbolPaletteInput" placeholder="Go to symbol… (functions, classes, headings)">
+            <ul id="symbolList"></ul>
+        </div>
+    </div>
+
     <!-- Custom Scripts -->
     <!-- Submodules -->
     <script src="js/filetree/render.js"></script>
@@ -312,6 +322,8 @@
     <script src="js/utils.js"></script>
     <script src="js/settings.js"></script>
     <script src="js/latex.js"></script>
+    <script src="js/csvViewer.js"></script>
+    <script src="js/symbols.js"></script>
     <script src="js/layout.js"></script>
     <script src="js/fileTree.js"></script>
     <script src="js/tabs.js"></script>
