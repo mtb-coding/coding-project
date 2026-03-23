@@ -28,14 +28,26 @@ function updateStatusBar() {
         encoding = /[^\x00-\x7F]/.test(sample) ? 'UTF-8' : 'ASCII';
     } catch (_) {}
 
+    // Line ending detection
+    let lineEnding = 'LF';
+    const crlfCount = (content.match(/\r\n/g) || []).length;
+    const crCount   = (content.match(/\r(?!\n)/g) || []).length;
+    if (crlfCount > 0 && crlfCount >= crCount) lineEnding = 'CRLF';
+    else if (crCount > crlfCount) lineEnding = 'CR';
+
     const statusEl = document.getElementById('statusContent');
     statusEl.innerHTML =
         `CWD: ${escapeHtml(cwdDisplayPath)} | Mode: ${escapeHtml(modeName)} | ` +
         `<span id="statusLineCol" class="status-goto" title="Go to Line/Column (Ctrl+G)">Ln ${line}/${lineCount}, Col ${column}</span>` +
-        `${wordCountStr} | ${size} B | ${encoding}${escapeHtml(unsavedIndicator)}`;
+        `${wordCountStr} | ${size} B | ${encoding} | ` +
+        `<span id="statusLineEnding" class="status-goto" title="Click to convert line endings">${lineEnding}</span>` +
+        `${escapeHtml(unsavedIndicator)}`;
 
     const gotoSpan = document.getElementById('statusLineCol');
     if (gotoSpan) gotoSpan.onclick = () => openGoToLine();
+
+    const leSpan = document.getElementById('statusLineEnding');
+    if (leSpan) leSpan.onclick = () => cycleLineEnding();
 
     // Update breadcrumb bar whenever the status bar updates
     updateBreadcrumb();
@@ -100,6 +112,42 @@ function updateBreadcrumb() {
         }
         bar.appendChild(span);
     });
+}
+
+// Convert line endings of the current file between LF, CRLF, and CR.
+// Cycles: LF → CRLF → CR → LF. Marks file unsaved after conversion.
+function cycleLineEnding() {
+    if (!codeEditor || !currentFilePath) return;
+    const content = codeEditor.getValue();
+
+    const crlfCount = (content.match(/\r\n/g) || []).length;
+    const crCount   = (content.match(/\r(?!\n)/g) || []).length;
+    let current = 'LF';
+    if (crlfCount > 0 && crlfCount >= crCount) current = 'CRLF';
+    else if (crCount > crlfCount) current = 'CR';
+
+    const next = current === 'LF' ? 'CRLF' : current === 'CRLF' ? 'CR' : 'LF';
+
+    // Normalise to LF first, then convert to target
+    let normalised = content.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+    let converted;
+    if (next === 'CRLF') converted = normalised.replace(/\n/g, '\r\n');
+    else if (next === 'CR') converted = normalised.replace(/\n/g, '\r');
+    else converted = normalised;
+
+    if (converted === content) return; // nothing changed
+
+    const cursor = codeEditor.getCursor();
+    codeEditor.setValue(converted);
+    codeEditor.setCursor(cursor);
+
+    if (currentFilePath && fileStructure[currentFilePath]) {
+        fileStructure[currentFilePath].content = converted;
+        fileStructure[currentFilePath].unsaved  = true;
+    }
+    updateTabs();
+    updateStatusBar();
+    showNotification(`Line endings converted to ${next}.`);
 }
 
 // Debounced renderFileTree — use for non-critical re-renders (e.g. tab close when not active)

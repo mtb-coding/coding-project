@@ -257,7 +257,7 @@ async function openFile(filePath) {
     else if (typeof content === 'string' && content.startsWith('[Binary') && !filePath.toLowerCase().endsWith('.xlsx')) { isReadOnly = true; }
     else if (filePath.toLowerCase().endsWith('.xlsx')) {
         if (typeof XLSX === 'undefined') { showNotification("XLSX library not loaded.", true); return; }
-        try { let base64Content = content; if (typeof content === 'string' && content.startsWith('data:')) { base64Content = content.substring(content.indexOf(',') + 1); } content = loadFileData(filePath.split('/').pop(), base64Content); isReadOnly = true; showNotification("XLSX opened as read-only CSV.", false, 4000); }
+        try { let base64Content = content; if (typeof content === 'string' && content.startsWith('data:')) { base64Content = content.substring(content.indexOf(',') + 1); } content = loadFileData(filePath.split('/').pop(), base64Content); isReadOnly = true; showNotification("XLSX opened as read-only CSV. Use Preview for table view.", false, 4000); }
         catch (e) { content = `Error opening XLSX: ${e.message}`; isReadOnly = true; }
     }
 
@@ -281,7 +281,8 @@ async function openFile(filePath) {
     else {
         const mode = codeEditor.getOption('mode'); const gutters = ["CodeMirror-linenumbers"]; if (settings.foldGutter) gutters.push("CodeMirror-foldgutter");
         const isLintable = mode === 'javascript' || mode === 'css' || mode === 'application/json'; if (isLintable) gutters.push("CodeMirror-lint-markers");
-        codeEditor.setOption('gutters', gutters); codeEditor.setOption('lint', isLintable ? (mode === 'javascript' ? { options: jsHintOptions } : true) : false);
+        const cssLintOpts = { options: { 'known-properties': false, 'vendor-prefix': false, 'compatible-vendor-prefixes': false } };
+        codeEditor.setOption('gutters', gutters); codeEditor.setOption('lint', isLintable ? (mode === 'javascript' ? { options: jsHintOptions } : mode === 'css' ? cssLintOpts : true) : false);
     }
 
     codeEditor.setValue(content); if (fileStructure[filePath]) fileStructure[filePath].unsaved = originalUnsavedState;
@@ -298,7 +299,7 @@ async function openFile(filePath) {
         }
     }
 
-    const isPreviewable = !filePath.startsWith("untitled://") && (filePath.toLowerCase().endsWith('.html') || filePath.toLowerCase().endsWith('.md'));
+    const isPreviewable = !filePath.startsWith("untitled://") && /\.(html?|md|tex|csv|xlsx)$/i.test(filePath);
     if (isPreviewEnabled && !isPreviewable) { isPreviewEnabled = false; updatePreviewLayout(); codeEditor.off('change', updatePreview); }
     else if (isPreviewEnabled && isPreviewable) { updatePreviewLayout(); updatePreview(); }
 
@@ -394,7 +395,7 @@ function setLanguage(filePath) {
     codeEditor.setOption('hintOptions', hintOptions);
 
     let enableLint = false; let lintOptions = true;
-    if (mode === 'javascript') { lintOptions = { options: jsHintOptions }; enableLint = true; } else if (mode === 'css' || mode === 'application/json') { lintOptions = mode === 'css' ? { options: { 'known-properties': false, 'vendor-prefix': false } } : true; enableLint = true; } else { enableLint = false; }
+    if (mode === 'javascript') { lintOptions = { options: jsHintOptions }; enableLint = true; } else if (mode === 'css' || mode === 'application/json') { lintOptions = mode === 'css' ? { options: { 'known-properties': false, 'vendor-prefix': false, 'compatible-vendor-prefixes': false } } : true; enableLint = true; } else { enableLint = false; }
     codeEditor.setOption('lint', enableLint ? lintOptions : false);
 
     const gutters = ["CodeMirror-linenumbers"]; if (settings.foldGutter) gutters.push("CodeMirror-foldgutter"); if (enableLint) gutters.push("CodeMirror-lint-markers");

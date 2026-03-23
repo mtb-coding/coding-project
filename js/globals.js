@@ -44,6 +44,7 @@ let isPreviewEnabled = false;
 let _previewScrollHandler = null; // bound scroll handler for preview sync
 let codeEditor;
 let localSearchCaseSensitive = false;
+let localSearchRegex = false;
 let globalSearchCaseSensitive = false;
 
 // Diff Variables

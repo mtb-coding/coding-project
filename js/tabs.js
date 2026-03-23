@@ -124,16 +124,22 @@ function showTabContextMenu(filePath, x, y) {
 
 async function closeOtherTabs(keepPath) {
     const paths = Array.from(openTabs.keys());
+    let skippedPinned = 0;
     for (let path of paths) {
         if (path !== keepPath && !pinnedTabs.has(path)) await closeTab(path);
+        else if (path !== keepPath && pinnedTabs.has(path)) skippedPinned++;
     }
+    if (skippedPinned > 0) showNotification(`${skippedPinned} pinned tab${skippedPinned !== 1 ? 's' : ''} skipped — unpin to close.`, false, 3000);
 }
 
 async function closeAllTabs() {
     const paths = Array.from(openTabs.keys());
+    let skippedPinned = 0;
     for (let path of paths) {
         if (!pinnedTabs.has(path)) await closeTab(path);
+        else skippedPinned++;
     }
+    if (skippedPinned > 0) showNotification(`${skippedPinned} pinned tab${skippedPinned !== 1 ? 's' : ''} skipped — unpin to close.`, false, 3000);
 }
 
 function startTabRenaming(filePath) {

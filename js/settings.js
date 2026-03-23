@@ -60,6 +60,9 @@ function applySettings() {
     const activeLineEl = _el('activeLineHighlight');
     if (activeLineEl) activeLineEl.checked = settings.activeLineHighlight ?? true;
 
+    const foldGutterEl = _el('foldGutter');
+    if (foldGutterEl) foldGutterEl.checked = settings.foldGutter ?? true;
+
     const autoSaveIntervalEl    = _el('autoSaveInterval');
     const autoSaveIntervalMsEl  = _el('autoSaveIntervalMs');
     const autoSaveIntervalMsRow = _el('autoSaveIntervalMsRow');
@@ -398,6 +401,16 @@ document.addEventListener('DOMContentLoaded', () => {
         activeLineHighlightEl.addEventListener('change', (e) => {
             updateAndSaveSetting('activeLineHighlight', e.target.checked);
             showNotification(e.target.checked ? 'Active line highlight enabled.' : 'Active line highlight disabled.', false, 2000);
+        });
+    }
+
+    const foldGutterEl = _el('foldGutter');
+    if (foldGutterEl) {
+        foldGutterEl.addEventListener('change', (e) => {
+            updateAndSaveSetting('foldGutter', e.target.checked);
+            // Refresh gutters on the active file so the change takes effect immediately
+            if (currentFilePath && !currentFilePath.startsWith('untitled://')) setLanguage(currentFilePath);
+            showNotification(e.target.checked ? 'Code folding enabled.' : 'Code folding disabled.', false, 2000);
         });
     }
 

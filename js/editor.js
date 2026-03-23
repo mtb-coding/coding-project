@@ -222,6 +222,16 @@ function toggleLocalSearchCase() {
     updateLocalSearch();
 }
 
+function toggleLocalSearchRegex() {
+    localSearchRegex = !localSearchRegex;
+    const btn = document.getElementById('localSearchRegexBtn');
+    btn.classList.toggle('active', localSearchRegex);
+    btn.title = localSearchRegex ? 'Regular Expression: ON (Alt+R)' : 'Use Regular Expression (Alt+R)';
+    const input = document.getElementById('localSearchInput');
+    input.style.fontFamily = localSearchRegex ? "'Fira Code', 'Consolas', monospace" : '';
+    updateLocalSearch();
+}
+
 function closeLocalSearch() {
     document.getElementById('localSearchWidget').style.display = 'none';
     clearLocalSearch();
@@ -245,7 +255,27 @@ function updateLocalSearch() {
     const query = document.getElementById('localSearchInput').value;
     if (!query) return;
 
-    const cursor = codeEditor.getSearchCursor(query, { line: 0, ch: 0 }, { caseFold: !localSearchCaseSensitive });
+    // In regex mode, validate the pattern first and show an error tint if invalid
+    const searchInput = document.getElementById('localSearchInput');
+    if (localSearchRegex) {
+        try {
+            new RegExp(query, localSearchCaseSensitive ? '' : 'i');
+            searchInput.style.borderColor = '';
+        } catch (e) {
+            searchInput.style.borderColor = '#ff4444';
+            return;
+        }
+    } else {
+        searchInput.style.borderColor = '';
+    }
+
+    // getSearchCursor accepts a string or a RegExp
+    const searchArg = localSearchRegex
+        ? new RegExp(query, localSearchCaseSensitive ? 'g' : 'gi')
+        : query;
+    const cursorOpts = localSearchRegex ? {} : { caseFold: !localSearchCaseSensitive };
+
+    const cursor = codeEditor.getSearchCursor(searchArg, { line: 0, ch: 0 }, cursorOpts);
     while (cursor.findNext()) {
         localSearchMatches.push({ from: cursor.from(), to: cursor.to() });
     }
@@ -381,6 +411,9 @@ document.addEventListener('DOMContentLoaded', () => {
             } else if (e.altKey && e.key.toLowerCase() === 'c') {
                 e.preventDefault();
                 toggleLocalSearchCase();
+            } else if (e.altKey && e.key.toLowerCase() === 'r') {
+                e.preventDefault();
+                toggleLocalSearchRegex();
             }
         });
     }

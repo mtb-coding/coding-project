@@ -70,8 +70,11 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
 
     codeEditor.on('cursorActivity', updateStatusBar);
+    const _debouncedBracketColorize = debounce(() => {
+        if (settings.bracketColorization) applyBracketColorizationToEditor();
+    }, 300);
     codeEditor.on('change', () => {
-        if (settings.bracketColorization) requestAnimationFrame(applyBracketColorizationToEditor);
+        if (settings.bracketColorization) _debouncedBracketColorize();
     });
 
     if (!fileStructure || !fileStructure.root) { fileStructure = { 'root': { type: 'folder', children: [], expanded: true, displayName: 'root' } }; }
@@ -111,11 +114,13 @@ document.addEventListener('DOMContentLoaded', async () => {
             closeToolbarMenu();
             const paletteVisible = document.getElementById('commandPalette').style.display !== 'none';
             const filePaletteVisible = document.getElementById('filePalette').style.display !== 'none';
+            const symbolPaletteVisible = document.getElementById('symbolPalette').style.display !== 'none';
             const settingsVisible = document.getElementById('settingsOverlay').style.display !== 'none';
             hideCommandPalette();
             hideFilePalette();
+            hideSymbolPalette();
             if (settingsVisible) toggleSettings();
-            if (paletteVisible || filePaletteVisible || settingsVisible) {
+            if (paletteVisible || filePaletteVisible || symbolPaletteVisible || settingsVisible) {
                 setTimeout(() => codeEditor && codeEditor.focus(), 0);
             }
         }
@@ -129,6 +134,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
         else if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key.toLowerCase() === 'p') { e.preventDefault(); showCommandPalette(); }
         else if ((e.ctrlKey || e.metaKey) && !e.shiftKey && e.key.toLowerCase() === 'p') { e.preventDefault(); showFilePalette(); }
+        else if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key.toLowerCase() === 'o') { e.preventDefault(); showSymbolPalette(); }
         else if ((e.ctrlKey || e.metaKey) && e.key === 'n') { e.preventDefault(); newTab(); }
         else if ((e.ctrlKey || e.metaKey) && e.key === 's') { e.preventDefault(); saveCurrentFile(); }
         else if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key.toLowerCase() === 's') { e.preventDefault(); saveAllFiles(); }
@@ -157,10 +163,15 @@ document.addEventListener('DOMContentLoaded', async () => {
     document.getElementById('replaceInput').addEventListener('keydown', (e) => { if (e.key === 'Enter') performGlobalReplace(); });
 
     const dropZone = document.getElementById('fileTree');
-    dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.style.backgroundColor = '#333'; });
-    dropZone.addEventListener('dragleave', () => { dropZone.style.backgroundColor = ''; });
+    dropZone.addEventListener('dragover', (e) => { if (dragSrcPath) return; e.preventDefault(); dropZone.style.outline = '2px solid var(--accent-color)'; dropZone.style.outlineOffset = '-2px'; });
+    dropZone.addEventListener('dragleave', () => { if (dragSrcPath) return; dropZone.style.outline = ''; dropZone.style.outlineOffset = ''; });
     dropZone.addEventListener('drop', async (e) => {
-        e.preventDefault(); dropZone.style.backgroundColor = '';
+        // Internal tree drags are handled entirely by dragDrop.js.
+        // dragSrcPath is set for the duration of any internal drag, so
+        // bailing here prevents the external-file handler from running
+        // (and announcing "Done — 0 item(s) dropped.") on those drops.
+        if (dragSrcPath) return;
+        e.preventDefault(); dropZone.style.outline = ''; dropZone.style.outlineOffset = '';
         const items = e.dataTransfer.items;
         if (items) {
             showNotification('Processing dropped items...', false, 3000);
@@ -220,6 +231,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     
     initCommandPalette();
     initFilePalette();
+    initSymbolPalette();
 
     document.addEventListener('click', (e) => {
         if (!e.target.closest('.toolbar-overflow-wrap')) closeToolbarMenu();
@@ -393,6 +405,7 @@ const commands = [
     { id: 'find-replace', label: 'Find/Replace in File', action: () => openLocalSearch(true), shortcut: 'Ctrl+H' },
     { id: 'toggle-recent', label: 'Toggle Recent Files Panel', action: toggleRecentFiles },
     { id: 'file-search', label: 'Search Files', action: showFilePalette, shortcut: 'Ctrl+P' },
+    { id: 'symbol-outline', label: 'Go to Symbol in File', action: showSymbolPalette, shortcut: 'Ctrl+Shift+O' },
     { id: 'settings', label: 'Open Settings', action: toggleSettings }
 ];
 

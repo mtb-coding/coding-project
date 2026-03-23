@@ -91,9 +91,9 @@ function initEditorPreviewResize() {
 
 function togglePreview() {
     const ext = currentFilePath ? currentFilePath.toLowerCase().split('.').pop() : '';
-    const previewable = currentFilePath && !currentFilePath.startsWith("untitled://") && ['html', 'md', 'tex'].includes(ext);
+    const previewable = currentFilePath && !currentFilePath.startsWith("untitled://") && ['html', 'md', 'tex', 'csv', 'xlsx'].includes(ext);
     if (!previewable) {
-        showNotification("Preview only available for HTML, Markdown, and LaTeX files.", true);
+        showNotification("Preview only available for HTML, Markdown, LaTeX, CSV, and XLSX files.", true);
         if (isPreviewEnabled) {
             isPreviewEnabled = false;
             updatePreviewLayout();
@@ -133,7 +133,7 @@ function updatePreviewLayout() {
     const resizeHandle = document.getElementById('editorPreviewResizeHandle');
     const previewBtn = document.getElementById('previewBtn');
     const ext = currentFilePath ? currentFilePath.toLowerCase().split('.').pop() : '';
-    const canPreview = currentFilePath && !currentFilePath.startsWith("untitled://") && ['html', 'md', 'tex'].includes(ext);
+    const canPreview = currentFilePath && !currentFilePath.startsWith("untitled://") && ['html', 'md', 'tex', 'csv', 'xlsx'].includes(ext);
 
     if (isPreviewEnabled && canPreview) {
         editorPane.style.flexBasis = settings.editorPaneFlexBasis || defaultSettings.editorPaneFlexBasis;
@@ -215,6 +215,11 @@ function updatePreview() {
         iframe.srcdoc = content + scrollSyncScript;
     } else if (ext === 'tex') {
         iframe.srcdoc = renderLatexToHtml(content) + scrollSyncScript;
+    } else if (ext === 'csv') {
+        iframe.srcdoc = renderCsvToHtml(content);
+    } else if (ext === 'xlsx') {
+        // XLSX content in the editor is already the CSV representation — render as table
+        iframe.srcdoc = renderCsvToHtml(content);
     }
 }
 
