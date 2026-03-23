@@ -403,6 +403,8 @@ const commands = [
     { id: 'goto-line', label: 'Go to Line / Column', action: openGoToLine, shortcut: 'Ctrl+G' },
     { id: 'global-search', label: 'Focus Global Search', action: () => { document.getElementById('searchInput').focus(); document.getElementById('searchInput').select(); }, shortcut: 'Ctrl+Shift+G' },
     { id: 'find-replace', label: 'Find/Replace in File', action: () => openLocalSearch(true), shortcut: 'Ctrl+H' },
+    { id: 'find-toggle-regex', label: 'Find: Toggle Regular Expression', action: () => { openLocalSearch(false); toggleLocalSearchRegex(); }, shortcut: 'Alt+R' },
+    { id: 'find-toggle-case', label: 'Find: Toggle Case Sensitive', action: () => { openLocalSearch(false); toggleLocalSearchCase(); }, shortcut: 'Alt+C' },
     { id: 'toggle-recent', label: 'Toggle Recent Files Panel', action: toggleRecentFiles },
     { id: 'file-search', label: 'Search Files', action: showFilePalette, shortcut: 'Ctrl+P' },
     { id: 'symbol-outline', label: 'Go to Symbol in File', action: showSymbolPalette, shortcut: 'Ctrl+Shift+O' },
