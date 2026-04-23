@@ -38,8 +38,7 @@
 - `js/main.js`: `DOMContentLoaded` handler returns early if `CodeMirror` is undefined, preventing a cascade of `ReferenceError`s
 
 ## Other
-- Added meticulous diagnostic console logging to the editor scrollbar(s) to see why they won't adhere to theme styling and instead use default OS versions.
-
+- Added meticulous diagnostic console logging to scrollbars
 ---
 
 # Changes in v0.3.3
