@@ -7,7 +7,8 @@ async function saveSession() {
         activeFilePath: currentFilePath,
         currentWorkingDirectory: currentWorkingDirectory,
         untitledTabCounter: untitledTabCounter,
-        recentFiles: recentFiles
+        recentFiles: recentFiles,
+        pinnedTabs: Array.from(pinnedTabs)
     };
 
     try {
@@ -50,6 +51,13 @@ async function loadSession() {
             if (Array.isArray(sessionData.recentFiles)) {
                 recentFiles = sessionData.recentFiles.filter(r => fileStructure[r.path]);
             }
+
+            // Restore pinned tabs, pruning any whose files no longer exist
+            pinnedTabs = new Set(
+                Array.isArray(sessionData.pinnedTabs)
+                    ? sessionData.pinnedTabs.filter(p => fileStructure[p])
+                    : []
+            );
 
             if (sessionData.openFiles?.length) {
                 sessionData.openFiles.forEach(path => {
@@ -109,7 +117,8 @@ function _saveSessionFallback() {
             openFiles: Array.from(openTabs.keys()),
             activeFilePath: currentFilePath,
             currentWorkingDirectory: currentWorkingDirectory,
-            untitledTabCounter: untitledTabCounter
+            untitledTabCounter: untitledTabCounter,
+            pinnedTabs: Array.from(pinnedTabs)
         };
         const serialized = JSON.stringify(sessionData);
         sessionStorage.setItem(SESSION_FALLBACK_KEY, serialized);

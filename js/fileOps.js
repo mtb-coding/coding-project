@@ -234,6 +234,9 @@ async function openFile(filePath) {
         const previewPane = document.getElementById('previewPane');
         const iframe = document.getElementById('previewFrame');
         document.getElementById('editorPane').style.display = 'none';
+        // Hide the minimap — it's a flex sibling and shifts left when the editor pane is hidden
+        const minimapWrap = document.getElementById('minimapWrap');
+        if (minimapWrap) minimapWrap.style.display = 'none';
         previewPane.style.display = 'block';
         previewPane.style.flexBasis = '100%';
         iframe.srcdoc = `
@@ -251,7 +254,19 @@ async function openFile(filePath) {
     }
 
     document.getElementById('editorPane').style.display = 'block';
-    if (!isPreviewEnabled) document.getElementById('previewPane').style.display = 'none';
+    // Restore the minimap whenever we're back to a normal (non-image) file
+    const minimapWrap = document.getElementById('minimapWrap');
+    if (minimapWrap) minimapWrap.style.display = '';
+    if (!isPreviewEnabled) {
+        const previewPane = document.getElementById('previewPane');
+        // If we're leaving image-view mode (preview pane was showing an image at full width),
+        // clear srcdoc so the next image open always triggers a fresh render — browsers
+        // won't re-render an iframe when srcdoc is reassigned the same string.
+        if (previewPane.style.flexBasis === '100%') {
+            document.getElementById('previewFrame').srcdoc = '';
+        }
+        previewPane.style.display = 'none';
+    }
 
     if (filePath.startsWith("untitled://")) { isReadOnly = false; }
     else if (typeof content === 'string' && content.startsWith('[Binary') && !filePath.toLowerCase().endsWith('.xlsx')) { isReadOnly = true; }

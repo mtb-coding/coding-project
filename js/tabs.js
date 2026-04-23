@@ -58,6 +58,7 @@ function showTabContextMenu(filePath, x, y) {
         const tabData = openTabs.get(filePath);
         if (tabData) tabData.tabElement = null;
         updateTabs();
+        if (settings.autoSaveSession) saveSession();
         closeContextMenu();
     };
     menu.appendChild(pinDiv);

@@ -243,6 +243,20 @@ function applyThemeChrome(theme) {
     for (const [key, val] of Object.entries(p)) {
         root.style.setProperty(key, val);
     }
+
+    // Edge/Windows can fail to re-evaluate CSS custom properties inside
+    // scrollbar-color when they're set via setProperty on :root after paint.
+    // Injecting the resolved values as inline styles on the scroll element
+    // directly bypasses that re-evaluation entirely.
+    const thumb = p['--chrome-scrollthumb'];
+    const track = p['--chrome-scrolltrack'];
+    if (thumb && track) {
+        requestAnimationFrame(() => {
+            document.querySelectorAll('.CodeMirror-scroll').forEach(el => {
+                el.style.scrollbarColor = `${thumb} ${track}`;
+            });
+        });
+    }
 }
 
 function applyAutoSaveInterval() {

@@ -44,6 +44,44 @@ document.addEventListener('DOMContentLoaded', async () => {
                 } else {
                     return CodeMirror.Pass; // let CM handle normal deletion
                 }
+            },
+            "Enter": (cm) => {
+                // Only activate in Markdown mode
+                if (cm.getOption('mode') !== 'markdown') return CodeMirror.Pass;
+
+                const cursor = cm.getCursor();
+                const line   = cm.getLine(cursor.line);
+
+                // Match unordered bullet:  optional indent + (- | * | +) + space + content
+                const unordered = line.match(/^(\s*)([-*+])\s(.*)/);
+                // Match ordered bullet:    optional indent + digits + . + space + content
+                const ordered   = line.match(/^(\s*)(\d+)\.\s(.*)/);
+
+                if (unordered) {
+                    const [, indent, marker, content] = unordered;
+                    // Empty bullet — clear the line and pass through so CM inserts a plain newline
+                    if (!content.trim()) {
+                        cm.replaceRange('', { line: cursor.line, ch: 0 }, { line: cursor.line, ch: line.length });
+                        return CodeMirror.Pass;
+                    }
+                    cm.replaceRange('\n' + indent + marker + ' ', { line: cursor.line, ch: line.length }, { line: cursor.line, ch: line.length });
+                    cm.setCursor({ line: cursor.line + 1, ch: (indent + marker + ' ').length });
+                    return;
+                }
+
+                if (ordered) {
+                    const [, indent, num, content] = ordered;
+                    if (!content.trim()) {
+                        cm.replaceRange('', { line: cursor.line, ch: 0 }, { line: cursor.line, ch: line.length });
+                        return CodeMirror.Pass;
+                    }
+                    const next = String(parseInt(num, 10) + 1);
+                    cm.replaceRange('\n' + indent + next + '. ', { line: cursor.line, ch: line.length }, { line: cursor.line, ch: line.length });
+                    cm.setCursor({ line: cursor.line + 1, ch: (indent + next + '. ').length });
+                    return;
+                }
+
+                return CodeMirror.Pass;
             }
         },
         hintOptions: { completeSingle: false }, indentUnit: settings.tabWidth, indentWithTabs: false, smartIndent: true
@@ -89,6 +127,58 @@ document.addEventListener('DOMContentLoaded', async () => {
     initAutoSaveOnBlur();
     
     await loadSession();
+
+    // ── Scrollbar diagnostics ──────────────────────────────────────────────
+    // Logs everything needed to debug themed scrollbars on Edge/Windows.
+    // Remove once the scrollbar styling issue is confirmed fixed.
+    setTimeout(() => {
+        try {
+            const scrollEl = document.querySelector('.CodeMirror-scroll');
+            if (!scrollEl) { console.warn('[Scrollbar] .CodeMirror-scroll not found'); return; }
+
+            const cs = getComputedStyle(scrollEl);
+
+            // 1. Standard CSS scrollbar properties (Chrome 121+, Edge 121+, Firefox)
+            console.group('[Scrollbar] Diagnostics');
+            console.log('scrollbar-color (standard):', cs.getPropertyValue('scrollbar-color') || '(not set / not supported)');
+            console.log('scrollbar-width (standard):', cs.getPropertyValue('scrollbar-width') || '(not set / not supported)');
+
+            // 2. CSS custom property values as resolved on :root
+            const rootCS = getComputedStyle(document.documentElement);
+            console.log('--chrome-scrollthumb resolved:', rootCS.getPropertyValue('--chrome-scrollthumb').trim() || '(empty)');
+            console.log('--chrome-scrolltrack resolved:', rootCS.getPropertyValue('--chrome-scrolltrack').trim() || '(empty)');
+
+            // 3. overflow values (CM needs these for scrollbars to exist at all)
+            console.log('overflow-x:', cs.overflowX);
+            console.log('overflow-y:', cs.overflowY);
+
+            // 4. Actual element dimensions
+            console.log('clientWidth / scrollWidth:', scrollEl.clientWidth, '/', scrollEl.scrollWidth);
+            console.log('clientHeight / scrollHeight:', scrollEl.clientHeight, '/', scrollEl.scrollHeight);
+
+            // 5. Browser / platform info
+            console.log('userAgent:', navigator.userAgent);
+
+            // 6. Check whether ::-webkit-scrollbar rules are in any stylesheet
+            let webkitRuleFound = false;
+            for (const sheet of document.styleSheets) {
+                try {
+                    for (const rule of sheet.cssRules) {
+                        if (rule.selectorText && rule.selectorText.includes('-webkit-scrollbar')) {
+                            webkitRuleFound = true;
+                            console.log('webkit rule found in sheet:', sheet.href || '(inline)', '|', rule.selectorText, '->', rule.style.cssText);
+                        }
+                    }
+                } catch (_) { /* cross-origin sheets throw */ }
+            }
+            if (!webkitRuleFound) console.warn('[Scrollbar] No -webkit-scrollbar rules found in any accessible stylesheet!');
+
+            console.groupEnd();
+        } catch (e) {
+            console.error('[Scrollbar] Diagnostic error:', e);
+        }
+    }, 1000);
+    // ── End scrollbar diagnostics ──────────────────────────────────────────
 
     updatePreviewLayout();
 
