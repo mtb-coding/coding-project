@@ -100,6 +100,7 @@ function _treeDropHandler(e) {
     // 2. It IS an internal drag. Stop the "0 items" script from seeing this!
     e.preventDefault();
     e.stopPropagation();
+    e.stopImmediatePropagation(); // Prevent the main.js drop listener from firing
     
     // 3. If dropped in an invalid spot, just clean up.
     if (!_dragIntent) { 
