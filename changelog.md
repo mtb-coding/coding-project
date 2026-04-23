@@ -7,11 +7,22 @@
 - Fixed the diff view
 - Fixed the letter 'e' not being highlighted consistently in diff view.
 - Fixed the close button not working in global search results
+- Fixed `.markdown` files not receiving Markdown-specific behavior (icon, syntax highlighting, preview, word count)
+- Fixed `.latex` and `.ltx` files not receiving LaTeX-specific behavior (icon, syntax highlighting, preview, file template)
+- Fixed `.htm` preview not rendering as HTML (type was accepted but fell through the render branch without output)
+- Fixed `.svg` and `.xhtml` files showing `❓` icon and falling back to plain-text mode instead of XML highlighting
+- Fixed status bar showing raw MIME strings (e.g. `text/x-scss`) for many modes — `modeNames` now covers all modes the editor can set
 
 ## Improvements
 - Pinned tabs are now saved to session data
 - Added "Open and Pin" option to the right-click context menu for files.
 - Pressing ENTER while writing a list in an .md file now automatically indents and adds the appropriate list symbol (autoincrements for numbered lists). Pressing enter with only a list symbol escapes this functionality.
+- Extended file icon map with aliases and additional types: `.markdown` 📝, `.latex`/`.ltx` 📐, `.htm`/`.xhtml` 🌐, `.mjs`/`.cjs` ☕, `.zsh`/`.fish` 💲, `.cmd` 💻, `.kts` 💜, `.pm` 🐪, `.hh`/`.cxx` 🇨++, `.jsonc` 📦, `.tsv` 📈, `.webp` 🖼️, `.tar`/`.7z` 📦, `.graphql`/`.gql` 🔷, `.lock` 🔒, `.env` 🔐
+- Extended syntax highlighting mode map with: `.markdown`, `.latex`, `.ltx`, `.xhtml`/`.svg` (XML), `.zsh`/`.fish` (Shell), `.hh`/`.cxx`/`.cc` (C++), `.kts` (Kotlin), `.pm` (Perl), `.jsonc` (JSON), `.tsv`/`.cmd`/`.lock` (plain text), `.graphql`/`.gql` (GraphQL)
+- Extended file-upload text allowlist (directory upload, single-file upload, drag-and-drop) to match expanded extension set so aliases are read as text rather than shown as binary placeholders
+- Extended LaTeX file template to cover `.latex` and `.ltx`; template title now strips all three LaTeX extensions
+- Replaced the three separate file-upload extension allowlists (directory upload, single file upload, drag-and-drop) with a shared denylist approach: `DATAURL_EXTENSIONS` and `BINARY_EXTENSIONS` sets defined once in `fileOps.js`, consumed via `getFileReadMode()`` from all three upload paths; unknown text-based formats now open correctly without requiring any code changes
+- SVGs are now previewable
 
 ## Additions
 - CDN failure resilience — added `js/vendor-fallbacks.js`, which loads before all CDN scripts and provides graceful degradation for every optional library:
