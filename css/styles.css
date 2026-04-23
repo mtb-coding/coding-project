@@ -404,10 +404,10 @@ body { background: var(--bg-color); color: var(--text-color); display: flex; hei
 .CodeMirror-merge-pane .CodeMirror { flex: 1; height: 100%; }
 .CodeMirror-merge-pane-rightmost { border-left: 1px solid var(--chrome-border); }
 .CodeMirror-merge-gap { background: var(--chrome-dropdown); border: none; border-left: 1px solid var(--chrome-border); border-right: 1px solid var(--chrome-border); height: 100%; }
-#mergeViewTarget .CodeMirror-merge-r-inserted,
-#mergeViewTarget .CodeMirror-merge-l-inserted { background-image: none; background-color: rgba(40, 167, 69, 0.2); }
-#mergeViewTarget .CodeMirror-merge-r-deleted,
-#mergeViewTarget .CodeMirror-merge-l-deleted { background-image: none; background-color: rgba(220, 53, 69, 0.2); }
+.CodeMirror-merge-r-inserted { background-image: none; background-color: rgba(40, 167, 69, 0.2); }
+.CodeMirror-merge-r-deleted { background-image: none; background-color: rgba(220, 53, 69, 0.2); }
+.CodeMirror-merge-l-inserted { background-image: none; background-color: rgba(40, 167, 69, 0.2); }
+.CodeMirror-merge-l-deleted { background-image: none; background-color: rgba(220, 53, 69, 0.2); }
 .CodeMirror-merge-r-chunk { background: rgba(40, 167, 69, 0.15); }
 .CodeMirror-merge-r-chunk-start { border-top: 1px solid rgba(40, 167, 69, 0.4); }
 .CodeMirror-merge-r-chunk-end { border-bottom: 1px solid rgba(40, 167, 69, 0.4); }
@@ -693,3 +693,19 @@ body { background: var(--bg-color); color: var(--text-color); display: flex; hei
 #symbolList::-webkit-scrollbar { width: 6px; }
 #symbolList::-webkit-scrollbar-track { background: transparent; }
 #symbolList::-webkit-scrollbar-thumb { background: var(--chrome-scrollthumb); border-radius: 3px; border: none; }
+
+/* Global Search Close Button — theme-aware */
+.search-close-btn {
+    float: right;
+    padding: 2px 8px;
+    font-size: 12px;
+    background: var(--chrome-input);
+    color: var(--text-color);
+    border: 1px solid var(--chrome-input-border);
+    border-radius: 3px;
+    cursor: pointer;
+    transition: background 0.15s;
+}
+.search-close-btn:hover {
+    background: var(--chrome-hover);
+}
