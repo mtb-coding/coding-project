@@ -260,18 +260,18 @@ function toggleDiff() {
     const diffContainer = document.getElementById('diffContainer');
     const localSearchWidget = document.getElementById('localSearchWidget');
 
+    const codeEditorDiv = document.getElementById('codeEditor');
+
     if (isDiffEnabled) {
         // TURN OFF DIFF MODE
         isDiffEnabled = false;
         if (diffBtn) diffBtn.classList.remove('active');
 
+        codeEditorDiv.style.display = '';
         diffContainer.style.display = 'none';
         diffContainer.innerHTML = '';
         diffView = null;
 
-        codeEditor.getWrapperElement().style.flex = '';
-        codeEditor.getWrapperElement().style.overflow = '';
-        codeEditor.getWrapperElement().style.maxHeight = '';
         codeEditor.refresh();
         codeEditor.focus();
     } else {
@@ -281,9 +281,7 @@ function toggleDiff() {
 
         if (localSearchWidget.style.display !== 'none') closeLocalSearch();
 
-        codeEditor.getWrapperElement().style.flex = '0';
-        codeEditor.getWrapperElement().style.overflow = 'hidden';
-        codeEditor.getWrapperElement().style.maxHeight = '0';
+        codeEditorDiv.style.display = 'none';
         diffContainer.style.display = 'flex';
         
         const entry = fileStructure[currentFilePath];
