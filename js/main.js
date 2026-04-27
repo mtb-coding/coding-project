@@ -1,3 +1,5 @@
+--- START OF FILE main.js ---
+
 function toggleToolbarMenu(e) {
     e.stopPropagation();
     const menu = document.getElementById('toolbarOverflowMenu');
@@ -127,6 +129,58 @@ document.addEventListener('DOMContentLoaded', async () => {
     initAutoSaveOnBlur();
     
     await loadSession();
+
+    // ── Scrollbar diagnostics ──────────────────────────────────────────────
+    // Logs everything needed to debug themed scrollbars on Edge/Windows.
+    // Remove once the scrollbar styling issue is confirmed fixed.
+    setTimeout(() => {
+        try {
+            const scrollEl = document.querySelector('.CodeMirror-scroll');
+            if (!scrollEl) { console.warn('[Scrollbar] .CodeMirror-scroll not found'); return; }
+
+            const cs = getComputedStyle(scrollEl);
+
+            // 1. Standard CSS scrollbar properties (Chrome 121+, Edge 121+, Firefox)
+            console.group('[Scrollbar] Diagnostics');
+            console.log('scrollbar-color (standard):', cs.getPropertyValue('scrollbar-color') || '(not set / not supported)');
+            console.log('scrollbar-width (standard):', cs.getPropertyValue('scrollbar-width') || '(not set / not supported)');
+
+            // 2. CSS custom property values as resolved on :root
+            const rootCS = getComputedStyle(document.documentElement);
+            console.log('--chrome-scrollthumb resolved:', rootCS.getPropertyValue('--chrome-scrollthumb').trim() || '(empty)');
+            console.log('--chrome-scrolltrack resolved:', rootCS.getPropertyValue('--chrome-scrolltrack').trim() || '(empty)');
+
+            // 3. overflow values (CM needs these for scrollbars to exist at all)
+            console.log('overflow-x:', cs.overflowX);
+            console.log('overflow-y:', cs.overflowY);
+
+            // 4. Actual element dimensions
+            console.log('clientWidth / scrollWidth:', scrollEl.clientWidth, '/', scrollEl.scrollWidth);
+            console.log('clientHeight / scrollHeight:', scrollEl.clientHeight, '/', scrollEl.scrollHeight);
+
+            // 5. Browser / platform info
+            console.log('userAgent:', navigator.userAgent);
+
+            // 6. Check whether ::-webkit-scrollbar rules are in any stylesheet
+            let webkitRuleFound = false;
+            for (const sheet of document.styleSheets) {
+                try {
+                    for (const rule of sheet.cssRules) {
+                        if (rule.selectorText && rule.selectorText.includes('-webkit-scrollbar')) {
+                            webkitRuleFound = true;
+                            console.log('webkit rule found in sheet:', sheet.href || '(inline)', '|', rule.selectorText, '->', rule.style.cssText);
+                        }
+                    }
+                } catch (_) { /* cross-origin sheets throw */ }
+            }
+            if (!webkitRuleFound) console.warn('[Scrollbar] No -webkit-scrollbar rules found in any accessible stylesheet!');
+
+            console.groupEnd();
+        } catch (e) {
+            console.error('[Scrollbar] Diagnostic error:', e);
+        }
+    }, 1000);
+    // ── End scrollbar diagnostics ──────────────────────────────────────────
 
     updatePreviewLayout();
 
