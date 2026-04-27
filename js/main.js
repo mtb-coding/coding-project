@@ -1,5 +1,3 @@
---- START OF FILE main.js ---
-
 function toggleToolbarMenu(e) {
     e.stopPropagation();
     const menu = document.getElementById('toolbarOverflowMenu');
