@@ -60,7 +60,6 @@ function createTreeNode(path) {
     }
     li.oncontextmenu = (e) => { e.preventDefault(); e.stopPropagation(); closeContextMenu(); showContextMenu(path, e.pageX, e.pageY); };
 
-    // --- BUG FIX APPLIED HERE ---
     if (path !== 'root') {
         li.draggable = true;
         li.addEventListener('dragstart', (e) => {
@@ -109,6 +108,10 @@ function highlightActiveFileInTree() {
     const activeLi = document.querySelector(`li[data-path="${CSS.escape(currentFilePath)}"]`);
     if (activeLi) {
         activeLi.classList.add('active-tree-node');
+        // Add open-file class to make it bold and blue immediately without full tree render
+        if (openTabs.has(currentFilePath)) {
+            activeLi.classList.add('open-file');
+        }
         activeLi.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     }
 }
