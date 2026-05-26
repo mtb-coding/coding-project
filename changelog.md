@@ -15,6 +15,8 @@
 - Fixed "Done — 0 item(s) dropped." 
 - Fixed opened files not being consistently highlighted in the file tree
 - Fixed an error that prevented external drag-drop
+- Fixed raster image files (`.png`, `.jpg`, `.gif`, `.webp`, etc.) not rendering when opened. Made the dedicated image-view mode detection more robust (now checks for any `data:` URL + guards against non-string content). Also extended the Preview button and preview rendering path to properly support raster images, including correct content fetching from the file entry when the editor is hidden.
+- Fixed external drag-and-drop of multiple files from the OS into the file tree: only one file was ever imported even when several were selected. Root cause was calling `await items[i].getAsFileSystemHandle()` inside the DataTransferItem loop (the drag data becomes stale after the first await per browser rules) combined with an early `break` on any error. Restructured the modern File System Access API path to collect all handle promises synchronously first, then `await Promise.allSettled`, with per-item error handling so one failure no longer aborts the entire multi-file drop.
 
 ## Improvements
 - Pinned tabs are now saved to session data
@@ -27,6 +29,9 @@
 - Replaced the three separate file-upload extension allowlists (directory upload, single file upload, drag-and-drop) with a shared denylist approach: `DATAURL_EXTENSIONS` and `BINARY_EXTENSIONS` sets defined once in `fileOps.js`, consumed via `getFileReadMode()` from all three upload paths; unknown text-based formats now open correctly without requiring any code changes
 - SVGs are now previewable
 - Changes made so that the editor scrollbar should now match active theme (but it doesn't; bugfix pending)
+- Removed the large production diagnostic console block (the ~50-line scrollbar theming diagnostics group that ran on every load and was explicitly marked "Remove once the scrollbar styling issue is confirmed fixed").
+- Cleaned up multiple stray development `console.log` / `console.warn` statements left in production code across layout.js, minimap.js, and settings.js.
+- Centralized `PREVIEWABLE_EXTENSIONS` as a single `Set` in globals.js (next to other app-wide constants). This eliminates the previous duplication of the previewable file list (hard-coded array in layout.js togglePreview + updatePreviewLayout, regex in fileOps.js openFile). The Preview button, layout guards, and open-file logic now all consume the same source of truth. Updated the user-facing notification and button tooltip to reflect the expanded set (now includes raster images).
 
 ## Additions
 - CDN failure resilience — added `js/vendor-fallbacks.js`, which loads before all CDN scripts and provides graceful degradation for every optional library:
@@ -41,8 +46,6 @@
 - `index.html`: `onerror` handler on the CodeMirror core `<script>` tag; inline MIME-type registration block guarded with `typeof CodeMirror !== 'undefined'` check
 - `js/main.js`: `DOMContentLoaded` handler returns early if `CodeMirror` is undefined, preventing a cascade of `ReferenceError`s
 
-## Other
-- Added meticulous diagnostic console logging to scrollbars
 ---
 
 # Changes in v0.3.3
