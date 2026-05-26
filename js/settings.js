@@ -269,10 +269,8 @@ function applyAutoSaveInterval() {
             const hasUnsaved = Array.from(openTabs.keys()).some(p => fileStructure[p]?.unsaved && !fileStructure[p]?.isUntitled);
             if (hasUnsaved) {
                 saveAllFiles();
-                console.log('[AutoSave] Interval save triggered');
             }
         }, settings.autoSaveIntervalMs);
-        console.log(`[AutoSave] Interval set to ${settings.autoSaveIntervalMs / 1000}s`);
     }
 }
 

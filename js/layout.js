@@ -91,9 +91,10 @@ function initEditorPreviewResize() {
 
 function togglePreview() {
     const ext = currentFilePath ? currentFilePath.toLowerCase().split('.').pop() : '';
-    const previewable = currentFilePath && !currentFilePath.startsWith("untitled://") && ['html', 'htm', 'md', 'markdown', 'tex', 'latex', 'ltx', 'csv', 'xlsx', 'svg'].includes(ext);
+    const previewable = currentFilePath && !currentFilePath.startsWith("untitled://") && PREVIEWABLE_EXTENSIONS.has(ext);
     if (!previewable) {
-        showNotification("Preview only available for HTML, Markdown, LaTeX, CSV, XLSX, and SVG files.", true);
+        // Keep in sync with PREVIEWABLE_EXTENSIONS in globals.js
+        showNotification("Preview only available for HTML, Markdown, LaTeX, CSV, XLSX, SVG, and image files.", true);
         if (isPreviewEnabled) {
             isPreviewEnabled = false;
             updatePreviewLayout();
@@ -133,7 +134,7 @@ function updatePreviewLayout() {
     const resizeHandle = document.getElementById('editorPreviewResizeHandle');
     const previewBtn = document.getElementById('previewBtn');
     const ext = currentFilePath ? currentFilePath.toLowerCase().split('.').pop() : '';
-    const canPreview = currentFilePath && !currentFilePath.startsWith("untitled://") && ['html', 'htm', 'md', 'markdown', 'tex', 'latex', 'ltx', 'csv', 'xlsx', 'svg'].includes(ext);
+    const canPreview = currentFilePath && !currentFilePath.startsWith("untitled://") && PREVIEWABLE_EXTENSIONS.has(ext);
 
     if (isPreviewEnabled && canPreview) {
         editorPane.style.flexBasis = settings.editorPaneFlexBasis || defaultSettings.editorPaneFlexBasis;
@@ -153,7 +154,15 @@ function updatePreviewLayout() {
 
 function updatePreview() {
     if (!currentFilePath || currentFilePath.startsWith("untitled://")) return;
-    const content = codeEditor.getValue(); 
+
+    // Prefer the stored content for data URLs (images, etc.) because the editor
+    // may be hidden or contain unrelated text for those file types.
+    let content = codeEditor.getValue();
+    const entry = fileStructure[currentFilePath];
+    if (entry && typeof entry.content === 'string' && entry.content.startsWith('data:')) {
+        content = entry.content;
+    }
+
     const iframe = document.getElementById('previewFrame');
     const ext = currentFilePath.toLowerCase().split('.').pop();
 
@@ -227,6 +236,14 @@ function updatePreview() {
             .svg-wrap { max-width: 100%; max-height: 100vh; display: flex; justify-content: center; align-items: center; }
             .svg-wrap svg { max-width: 100%; max-height: 90vh; width: auto; height: auto; }
         </style></head><body><div class="svg-wrap">${content}</div></body></html>`;
+    } else if (PREVIEWABLE_EXTENSIONS.has(ext) && ['png','jpg','jpeg','gif','webp','bmp','ico','tiff','tif','avif'].includes(ext) && typeof content === 'string' && content.startsWith('data:')) {
+        // Raster images (png, jpg, gif, webp, etc.) — show in a centered dark viewer
+        iframe.srcdoc = `<!DOCTYPE html><html><head><style>
+            * { margin: 0; padding: 0; box-sizing: border-box; }
+            body { background: #1e1e1e; display: flex; justify-content: center; align-items: center; min-height: 100vh; padding: 20px; }
+            .img-wrap { max-width: 100%; max-height: 100vh; display: flex; justify-content: center; align-items: center; }
+            .img-wrap img { max-width: 100%; max-height: 90vh; width: auto; height: auto; box-shadow: 0 0 10px rgba(0,0,0,0.5); border-radius: 4px; }
+        </style></head><body><div class="img-wrap"><img src="${content}" alt="${currentFilePath}"></div></body></html>`;
     }
 }
 
@@ -329,7 +346,5 @@ function toggleDiff() {
                 codeEditor.setValue(newVal); 
             }
         });
-
-        console.log('[Diff] View opened for:', currentFilePath);
     }
 }

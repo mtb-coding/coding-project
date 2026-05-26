@@ -29,6 +29,13 @@ const SESSION_STORAGE_KEY = `codeEditorSession_${VERSION}`;
 const SETTINGS_STORAGE_KEY = 'codeEditorSettings';
 const MAX_FILE_SIZE_BYTES = 5 * 1024 * 1024;
 const LARGE_FILE_THRESHOLD_BYTES = 1 * 1024 * 1024;
+const PREVIEWABLE_EXTENSIONS = new Set([
+    'html', 'htm', 'md', 'markdown', 'tex', 'latex', 'ltx', 'csv', 'xlsx', 'svg',
+    // Raster images (shown via <img> in preview pane or dedicated image view)
+    'png', 'jpg', 'jpeg', 'gif', 'webp', 'bmp', 'ico', 'tiff', 'tif', 'avif'
+]);
+// Single source of truth; used by layout.js guards and fileOps.js openFile
+
 const modeNames = { 'htmlmixed': 'HTML', 'javascript': 'JavaScript', 'text/typescript': 'TypeScript', 'text/jsx': 'JSX', 'text/typescript-jsx': 'TSX', 'python': 'Python', 'css': 'CSS', 'text/x-scss': 'SCSS', 'text/x-less': 'Less', 'text/x-sass': 'Sass', 'application/json': 'JSON', 'markdown': 'Markdown', 'text/plain': 'Plain Text', 'text/x-csrc': 'C', 'text/x-c++src': 'C++', 'text/x-csharp': 'C#', 'text/x-java': 'Java', 'application/x-httpd-php': 'PHP', 'text/x-sql': 'SQL', 'text/x-yaml': 'YAML', 'text/x-sh': 'Shell', 'rust': 'Rust', 'go': 'Go', 'text/x-stex': 'LaTeX', 'text/x-ruby': 'Ruby', 'text/x-kotlin': 'Kotlin', 'text/x-swift': 'Swift', 'text/x-lua': 'Lua', 'text/x-perl': 'Perl', 'text/x-rsrc': 'R', 'text/x-dockerfile': 'Dockerfile', 'text/x-properties': 'Properties', 'text/x-toml': 'TOML', 'text/x-vue': 'Vue', 'text/x-svelte': 'Svelte', 'graphql': 'GraphQL', 'xml': 'XML' };
 
 const jsHintOptions = { 

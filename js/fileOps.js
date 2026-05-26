@@ -276,9 +276,19 @@ async function openFile(filePath) {
     const fileExt = filePath.includes('.') ? filePath.split('.').pop().toLowerCase() : '';
     if (estimatedSize > LARGE_FILE_THRESHOLD_BYTES && !DATAURL_EXTENSIONS.has(fileExt) && !filePath.startsWith("untitled://")) { isLargeFile = true; showNotification(`Large file mode active for "${filePath.split('/').pop()}".`, false, 4000); }
 
-    if (DATAURL_EXTENSIONS.has(fileExt) && !['xlsx','xls'].includes(fileExt) && content.startsWith('data:image')) {
+    if (DATAURL_EXTENSIONS.has(fileExt) && !['xlsx','xls'].includes(fileExt) && typeof content === 'string' && content.startsWith('data:')) {
         const previewPane = document.getElementById('previewPane');
         const iframe = document.getElementById('previewFrame');
+
+        // Clear any split flex/resizer state left by the normal Preview system
+        // before forcing the dedicated full-width image view. This prevents
+        // layout corruption when switching from normal preview (especially after
+        // resize drags) back to images.
+        document.getElementById('editorPane').style.flexBasis = '';
+        previewPane.style.flexBasis = '';
+        const resizeHandle = document.getElementById('editorPreviewResizeHandle');
+        if (resizeHandle) resizeHandle.style.display = 'none';
+
         document.getElementById('editorPane').style.display = 'none';
         // Hide the minimap — it's a flex sibling and shifts left when the editor pane is hidden
         const minimapWrap = document.getElementById('minimapWrap');
@@ -305,12 +315,15 @@ async function openFile(filePath) {
     if (minimapWrap) minimapWrap.style.display = '';
     if (!isPreviewEnabled) {
         const previewPane = document.getElementById('previewPane');
-        // If we're leaving image-view mode (preview pane was showing an image at full width),
-        // clear srcdoc so the next image open always triggers a fresh render — browsers
-        // won't re-render an iframe when srcdoc is reassigned the same string.
-        if (previewPane.style.flexBasis === '100%') {
-            document.getElementById('previewFrame').srcdoc = '';
-        }
+        const resizeHandle = document.getElementById('editorPreviewResizeHandle');
+        // Fully reset any layout state left by the normal Preview + resizer system
+        // (flexBasis values from drags, resize handle visibility, etc.) so that
+        // a subsequent image open can cleanly force 100% preview.
+        previewPane.style.flexBasis = '';
+        document.getElementById('editorPane').style.flexBasis = '';
+        if (resizeHandle) resizeHandle.style.display = 'none';
+        // Clear srcdoc so the next image open always triggers a fresh render.
+        document.getElementById('previewFrame').srcdoc = '';
         previewPane.style.display = 'none';
     }
 
@@ -360,7 +373,9 @@ async function openFile(filePath) {
         }
     }
 
-    const isPreviewable = !filePath.startsWith("untitled://") && /\.(html?|md|markdown|tex|latex|ltx|csv|xlsx|svg)$/i.test(filePath);
+    // Use centralized list (see PREVIEWABLE_EXTENSIONS in globals.js)
+    const ext = filePath.includes('.') ? filePath.split('.').pop().toLowerCase() : '';
+    const isPreviewable = !filePath.startsWith("untitled://") && PREVIEWABLE_EXTENSIONS.has(ext);
     if (isPreviewEnabled && !isPreviewable) { isPreviewEnabled = false; updatePreviewLayout(); codeEditor.off('change', updatePreview); }
     else if (isPreviewEnabled && isPreviewable) { updatePreviewLayout(); updatePreview(); }
 

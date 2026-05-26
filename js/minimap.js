@@ -135,9 +135,6 @@
         wrap.appendChild(canvas);
         ctx = canvas.getContext('2d');
 
-        console.log('[Minimap] wrap dimensions:', wrap.clientWidth, 'x', wrap.clientHeight,
-                    '— waiting for first file open');
-
         // Listen on the wrap (not just the canvas) so clicks on any part of the
         // minimap panel register — the canvas may not fill the full wrap height
         // for very short files.

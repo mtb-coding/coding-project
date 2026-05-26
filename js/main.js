@@ -128,58 +128,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     
     await loadSession();
 
-    // ── Scrollbar diagnostics ──────────────────────────────────────────────
-    // Logs everything needed to debug themed scrollbars on Edge/Windows.
-    // Remove once the scrollbar styling issue is confirmed fixed.
-    setTimeout(() => {
-        try {
-            const scrollEl = document.querySelector('.CodeMirror-scroll');
-            if (!scrollEl) { console.warn('[Scrollbar] .CodeMirror-scroll not found'); return; }
-
-            const cs = getComputedStyle(scrollEl);
-
-            // 1. Standard CSS scrollbar properties (Chrome 121+, Edge 121+, Firefox)
-            console.group('[Scrollbar] Diagnostics');
-            console.log('scrollbar-color (standard):', cs.getPropertyValue('scrollbar-color') || '(not set / not supported)');
-            console.log('scrollbar-width (standard):', cs.getPropertyValue('scrollbar-width') || '(not set / not supported)');
-
-            // 2. CSS custom property values as resolved on :root
-            const rootCS = getComputedStyle(document.documentElement);
-            console.log('--chrome-scrollthumb resolved:', rootCS.getPropertyValue('--chrome-scrollthumb').trim() || '(empty)');
-            console.log('--chrome-scrolltrack resolved:', rootCS.getPropertyValue('--chrome-scrolltrack').trim() || '(empty)');
-
-            // 3. overflow values (CM needs these for scrollbars to exist at all)
-            console.log('overflow-x:', cs.overflowX);
-            console.log('overflow-y:', cs.overflowY);
-
-            // 4. Actual element dimensions
-            console.log('clientWidth / scrollWidth:', scrollEl.clientWidth, '/', scrollEl.scrollWidth);
-            console.log('clientHeight / scrollHeight:', scrollEl.clientHeight, '/', scrollEl.scrollHeight);
-
-            // 5. Browser / platform info
-            console.log('userAgent:', navigator.userAgent);
-
-            // 6. Check whether ::-webkit-scrollbar rules are in any stylesheet
-            let webkitRuleFound = false;
-            for (const sheet of document.styleSheets) {
-                try {
-                    for (const rule of sheet.cssRules) {
-                        if (rule.selectorText && rule.selectorText.includes('-webkit-scrollbar')) {
-                            webkitRuleFound = true;
-                            console.log('webkit rule found in sheet:', sheet.href || '(inline)', '|', rule.selectorText, '->', rule.style.cssText);
-                        }
-                    }
-                } catch (_) { /* cross-origin sheets throw */ }
-            }
-            if (!webkitRuleFound) console.warn('[Scrollbar] No -webkit-scrollbar rules found in any accessible stylesheet!');
-
-            console.groupEnd();
-        } catch (e) {
-            console.error('[Scrollbar] Diagnostic error:', e);
-        }
-    }, 1000);
-    // ── End scrollbar diagnostics ──────────────────────────────────────────
-
     updatePreviewLayout();
 
     // Initialise minimap now that the editor and session are ready
@@ -422,25 +370,35 @@ document.addEventListener('DOMContentLoaded', async () => {
             let usedModernAPI = false;
             
             // 1. Attempt Modern File System Access API
+            // IMPORTANT: Must collect getAsFileSystemHandle() calls *synchronously* before any await.
+            // After the first await the DataTransferItemList becomes stale for multi-file drops.
             if (items && items.length > 0 && 'getAsFileSystemHandle' in DataTransferItem.prototype) {
-                const processQueue = [];
+                const handlePromises = [];
                 for (let i = 0; i < items.length; i++) {
                     if (items[i].kind === 'file') {
-                        try {
-                            const handle = await items[i].getAsFileSystemHandle();
-                            if (handle) {
-                                processQueue.push(processHandle(handle, baseDropPath));
-                                usedModernAPI = true;
-                            }
-                        } catch (err) {
-                            console.warn("FileSystemHandle failed, falling back...", err);
-                            usedModernAPI = false;
-                            break; // Abort modern API and try legacy
-                        }
+                        handlePromises.push(
+                            items[i].getAsFileSystemHandle().catch(err => {
+                                console.warn("FileSystemHandle failed for one item (will try legacy for others if needed):", err);
+                                return null;
+                            })
+                        );
                     }
                 }
-                if (usedModernAPI) {
-                    await Promise.allSettled(processQueue);
+
+                if (handlePromises.length > 0) {
+                    const handleResults = await Promise.allSettled(handlePromises);
+                    const processQueue = [];
+
+                    for (const result of handleResults) {
+                        if (result.status === 'fulfilled' && result.value) {
+                            processQueue.push(processHandle(result.value, baseDropPath));
+                            usedModernAPI = true;
+                        }
+                    }
+
+                    if (usedModernAPI) {
+                        await Promise.allSettled(processQueue);
+                    }
                 }
             }
 
